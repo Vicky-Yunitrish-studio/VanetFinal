@@ -359,7 +359,7 @@ def test_incident_response(agent, num_tests=5, visualize=True, show_plot=True):
 
 if __name__ == "__main__":
     # 設定是否顯示圖表
-    show_plots = False  # 將此變數設為 False 可暫時關閉所有圖表顯示
+    show_plots = True  # 將此變數設為 False 可暫時關閉所有圖表顯示
     
     # Train the agent
     print("Training Q-Learning agent...")
