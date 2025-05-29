@@ -49,8 +49,16 @@ class UrbanGrid:
         
         return np.mean(self.congestion[x_min:x_max+1, y_min:y_max+1])
 
-    def visualize(self, vehicles=None):
-        """Visualize the grid with congestion and vehicles"""
+    def visualize(self, vehicles=None, show_plot=True):
+        """Visualize the grid with congestion and vehicles
+        
+        Args:
+            vehicles: List of vehicles to visualize
+            show_plot: Whether to display the plot (set to False to suppress display)
+        """
+        if not show_plot:
+            return
+            
         plt.figure(figsize=(10, 10))
         
         # Plot congestion as heatmap
@@ -211,8 +219,15 @@ class Vehicle:
         return reward
 
 
-def run_simulation(episodes=1000, visualize_interval=100, max_steps=200):
-    """Run the full simulation"""
+def run_simulation(episodes=1000, visualize_interval=100, max_steps=200, show_plots=True):
+    """Run the full simulation
+    
+    Args:
+        episodes: Number of episodes to run
+        visualize_interval: Interval for visualization (set to 0 to disable)
+        max_steps: Maximum steps per episode
+        show_plots: Whether to show plots (can be set to False to suppress all visualization)
+    """
     urban_grid = UrbanGrid(size=10)
     agent = QLearningAgent(urban_grid)
     
@@ -259,7 +274,7 @@ def run_simulation(episodes=1000, visualize_interval=100, max_steps=200):
             
             # Visualize if needed
             if visualize_interval > 0 and (episode % visualize_interval == 0) and (step % 5 == 0):
-                urban_grid.visualize(vehicles)
+                urban_grid.visualize(vehicles, show_plot=show_plots)
         
         # Record episode statistics
         episode_total_reward = sum(v.total_reward for v in vehicles)
@@ -275,33 +290,34 @@ def run_simulation(episodes=1000, visualize_interval=100, max_steps=200):
                   f"Steps: {episode_avg_steps:.2f}, Success Rate: {episode_success:.2f}")
     
     # Plot learning curves
-    plt.figure(figsize=(15, 5))
-    
-    plt.subplot(131)
-    plt.plot(episode_rewards)
-    plt.title('Total Reward per Episode')
-    plt.xlabel('Episode')
-    plt.ylabel('Reward')
-    
-    plt.subplot(132)
-    plt.plot(episode_steps)
-    plt.title('Average Steps per Episode')
-    plt.xlabel('Episode')
-    plt.ylabel('Steps')
-    
-    plt.subplot(133)
-    plt.plot(success_rate)
-    plt.title('Success Rate per Episode')
-    plt.xlabel('Episode')
-    plt.ylabel('Success Rate')
-    
-    plt.tight_layout()
-    plt.show()
+    if show_plots:
+        plt.figure(figsize=(15, 5))
+        
+        plt.subplot(131)
+        plt.plot(episode_rewards)
+        plt.title('Total Reward per Episode')
+        plt.xlabel('Episode')
+        plt.ylabel('Reward')
+        
+        plt.subplot(132)
+        plt.plot(episode_steps)
+        plt.title('Average Steps per Episode')
+        plt.xlabel('Episode')
+        plt.ylabel('Steps')
+        
+        plt.subplot(133)
+        plt.plot(success_rate)
+        plt.title('Success Rate per Episode')
+        plt.xlabel('Episode')
+        plt.ylabel('Success Rate')
+        
+        plt.tight_layout()
+        plt.show()
     
     return agent
 
 
-def test_incident_response(agent, num_tests=5, visualize=True):
+def test_incident_response(agent, num_tests=5, visualize=True, show_plot=True):
     """Test how well agents avoid incidents after learning"""
     urban_grid = agent.urban_grid
     
@@ -330,7 +346,7 @@ def test_incident_response(agent, num_tests=5, visualize=True):
             step += 1
             
             if visualize and (step % 3 == 0 or vehicle.reached):
-                urban_grid.visualize([vehicle])
+                urban_grid.visualize([vehicle], show_plot=show_plot)
                 plt.title(f"Test {test+1}: Step {step}")
         
         # Report results
@@ -342,10 +358,13 @@ def test_incident_response(agent, num_tests=5, visualize=True):
 
 
 if __name__ == "__main__":
+    # 設定是否顯示圖表
+    show_plots = False  # 將此變數設為 False 可暫時關閉所有圖表顯示
+    
     # Train the agent
     print("Training Q-Learning agent...")
-    trained_agent = run_simulation(episodes=200, visualize_interval=50)
+    trained_agent = run_simulation(episodes=200, visualize_interval=50, show_plots=show_plots)
     
     # Test incident response
     print("\nTesting incident response...")
-    test_incident_response(trained_agent)
+    test_incident_response(trained_agent, show_plot=show_plots)
