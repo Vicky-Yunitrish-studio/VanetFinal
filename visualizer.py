@@ -95,44 +95,51 @@ class TkinterVisualizer:
                 # Draw roads with better visibility
                 # Base road layers (slightly wider)
                 road_width = self.cell_size/8  # Increased road width
+                congestion_color = self._get_congestion_color(grid.congestion[i, j])
                 
-                # Horizontal road base (black)
+                # Horizontal road
+                # Base layer
                 self.canvas.create_rectangle(
                     x - self.cell_size/2, y - road_width,
                     x + self.cell_size/2, y + road_width,
                     fill='#222222', outline=''
                 )
-                
-                # Vertical road base (black)
-                self.canvas.create_rectangle(
-                    x - road_width, y - self.cell_size/2,
-                    x + road_width, y + self.cell_size/2,
-                    fill='#222222', outline=''
-                )
-                
-                # Road surface with congestion
-                congestion_color_h = self._get_congestion_color(grid.congestion[i, j])
-                
-                # Horizontal road surface
+                # Surface layer
                 self.canvas.create_rectangle(
                     x - self.cell_size/2 + 2, y - road_width + 2,
                     x + self.cell_size/2 - 2, y + road_width - 2,
                     fill='#444444', outline=''
                 )
+                # Congestion overlay for horizontal road
+                if grid.congestion[i, j] > 0.1:
+                    self.canvas.create_rectangle(
+                        x - self.cell_size/2 + 2, y - road_width + 2,
+                        x + self.cell_size/2 - 2, y + road_width - 2,
+                        fill=congestion_color, outline='', stipple='gray50'
+                    )
                 
-                # Vertical road surface
+                # Vertical road
+                # Base layer
+                self.canvas.create_rectangle(
+                    x - road_width, y - self.cell_size/2,
+                    x + road_width, y + self.cell_size/2,
+                    fill='#222222', outline=''
+                )
+                # Surface layer
                 self.canvas.create_rectangle(
                     x - road_width + 2, y - self.cell_size/2 + 2,
                     x + road_width - 2, y + self.cell_size/2 - 2,
                     fill='#444444', outline=''
                 )
-                
-                # Add congestion overlay if significant
+                # Congestion overlay for vertical road
                 if grid.congestion[i, j] > 0.1:
                     self.canvas.create_rectangle(
-                        x - self.cell_size/10, y - self.cell_size/2, 
-                        x + self.cell_size/10, y + self.cell_size/2,
-                        fill=congestion_color_h, outline='', stipple='gray50')
+                        x - road_width + 2, y - self.cell_size/2 + 2,
+                        x + road_width - 2, y + self.cell_size/2 - 2,
+                        fill=congestion_color, outline='', stipple='gray50'
+                    )
+                
+
                 
                 # Draw obstacles
                 if grid.obstacles[i, j]:
@@ -213,32 +220,7 @@ class TkinterVisualizer:
                             x + light_spacing + light_radius, y + light_radius,
                             fill='#00ff00', outline='#008800'
                         )
-                    # Traffic light box
-                    self.canvas.create_rectangle(
-                        x - self.cell_size/6, y - self.cell_size/6,
-                        x + self.cell_size/6, y + self.cell_size/6,
-                        fill='gray', outline='')
-                    
-                    # North-South green (East-West red)
-                    if grid.traffic_lights[i, j] == 1:
-                        self.canvas.create_oval(
-                            x - 5, y + 5,
-                            x + 5, y + 15,
-                            fill='green', outline='')
-                        self.canvas.create_oval(
-                            x + 5, y - 5,
-                            x + 15, y + 5,
-                            fill='red', outline='')
-                    # East-West green (North-South red)
-                    else:
-                        self.canvas.create_oval(
-                            x - 5, y + 5,
-                            x + 5, y + 15,
-                            fill='red', outline='')
-                        self.canvas.create_oval(
-                            x + 5, y - 5,
-                            x + 15, y + 5,
-                            fill='green', outline='')
+
         
         # Draw vehicles and destinations
         if hasattr(grid, 'vehicles') and grid.vehicles:

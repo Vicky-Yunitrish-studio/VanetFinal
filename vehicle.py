@@ -118,6 +118,17 @@ class Vehicle:
         
         self.total_reward += reward
         
+        # --- Proximity reward: the closer to the destination, the higher the reward ---
+        def manhattan_dist(a, b):
+            return abs(a[0] - b[0]) + abs(a[1] - b[1])
+        
+        old_dist = manhattan_dist(self.position, self.destination)
+        new_dist = manhattan_dist(new_position, self.destination)
+        proximity_reward = old_dist - new_dist  # +1 if closer, -1 if farther, 0 if same
+        # You can scale this reward if you want a stronger effect:
+        reward += proximity_reward * 2  # 2 can be adjusted for effect strength
+        # --- End proximity reward ---
+        
         # Get new state
         new_congestion_level = self.urban_grid.get_congestion_window(self.position[0], self.position[1])
         new_state = self.agent.get_state_key(self.position, new_congestion_level)
