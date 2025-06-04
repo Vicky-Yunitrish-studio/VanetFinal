@@ -37,10 +37,10 @@ class Vehicle:
         self.steps = 0
         self.total_reward = 0
         
-        # 跟踪車輛位置歷史以檢測循環
+        # Track vehicle position history to detect loops
         self.position_history = {}  # {position: count}
         self.position_history[self.position] = 1
-        self.loop_penalty_applied = {}  # {position: bool} 跟踪是否已經對特定位置應用過循環懲罰
+        self.loop_penalty_applied = {}  # {position: bool} Track whether loop penalty has been applied to a specific position
     
     def move(self):
         """Move the vehicle according to the Q-learning policy"""
@@ -66,24 +66,36 @@ class Vehicle:
         if congestion_at_new_pos > 0.5:  # High congestion threshold
             reward -= 5 * congestion_at_new_pos  # Penalty proportional to congestion
         
-        # Add traffic light penalty
+        # Check if trying to move backwards
+        if len(self.path) > 1 and new_position == self.path[-2]:
+            # Trying to return to the immediately previous position
+            reward -= 15  # Strong penalty for moving backwards
+        
+        # Handle traffic lights
         x, y = new_position
+        can_move = True
         if self.urban_grid.traffic_lights[x, y] > 0:
             # Check if moving against red light
             # If moving North-South (dy != 0) and EW is green (state = 2)
             # Or if moving East-West (dx != 0) and NS is green (state = 1)
             if (dy != 0 and self.urban_grid.traffic_lights[x, y] == 2) or \
                (dx != 0 and self.urban_grid.traffic_lights[x, y] == 1):
-                reward -= 10  # Penalty for running a red light
-        
-        # Check if destination reached
-        if new_position == self.destination:
-            reward += 100  # Destination reward
-            self.reached = True
-        
-        # Update position and path
-        self.position = new_position
-        self.path.append(self.position)
+                # Stop and wait for the light to change
+                can_move = False
+                reward -= 5  # Small waiting penalty (less than running the red light)
+                
+        if can_move:
+            # Check if destination reached
+            if new_position == self.destination:
+                reward += 100  # Destination reward
+                self.reached = True
+            
+            # Update position and path
+            self.position = new_position
+            self.path.append(self.position)
+        else:
+            # Stay in the same position (waiting at red light)
+            self.path.append(self.position)  # Record the wait as a step
         self.steps += 1
         
         # Detect loops

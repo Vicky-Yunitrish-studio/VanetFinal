@@ -7,16 +7,31 @@ class TkinterVisualizer:
     def __init__(self, grid_size=10, cell_size=50):
         self.grid_size = grid_size
         self.cell_size = cell_size
-        self.window_size = grid_size * cell_size
+        
+        # Increase margins to prevent roads from being cut off at edges
+        self.margin = self.cell_size  # Use full cell size as margin
+        self.window_width = grid_size * cell_size + 2 * self.margin
+        self.window_height = grid_size * cell_size + 2 * self.margin + 50  # Extra space for info panel
         
         # Create main window
         self.root = tk.Tk()
         self.root.title("Urban Grid Q-Learning Simulation")
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         
-        # Create canvas for drawing
-        self.canvas = Canvas(self.root, width=self.window_size, height=self.window_size, bg='#d9d9d9')
-        self.canvas.pack(side=tk.TOP, padx=10, pady=10)
+        # Create main frame with padding
+        main_frame = tk.Frame(self.root, padx=20, pady=20)
+        main_frame.pack(expand=True, fill=tk.BOTH)
+        
+        # Create canvas for drawing with a border
+        self.canvas = Canvas(
+            main_frame,
+            width=self.window_width,
+            height=self.window_height,
+            bg='#d9d9d9',
+            relief='ridge',
+            bd=2
+        )
+        self.canvas.pack(side=tk.TOP)
         
         # Create info panel
         self.info_frame = Frame(self.root)
@@ -62,37 +77,55 @@ class TkinterVisualizer:
         # Draw the city grid
         for i in range(grid.size):
             for j in range(grid.size):
-                x = i * self.cell_size
-                y = (grid.size - 1 - j) * self.cell_size  # Invert y for proper orientation
+                x = i * self.cell_size + self.margin
+                y = (grid.size - 1 - j) * self.cell_size + self.margin  # Invert y for proper orientation
                 
                 # Draw building block (in each grid corner)
                 if i > 0 and j > 0:
                     building_color = self._get_building_color()
+                    # Add slight offset to buildings to create depth effect
                     self.canvas.create_rectangle(
-                        x - self.cell_size + 5, y + 5, 
-                        x - 5, y + self.cell_size - 5,
-                        fill=building_color, outline='')
+                        x - self.cell_size + 8, y + 8, 
+                        x - 8, y + self.cell_size - 8,
+                        fill=building_color,
+                        outline='gray20',
+                        width=1
+                    )
                 
-                # Draw roads
-                # Horizontal road
+                # Draw roads with better visibility
+                # Base road layers (slightly wider)
+                road_width = self.cell_size/8  # Increased road width
+                
+                # Horizontal road base (black)
+                self.canvas.create_rectangle(
+                    x - self.cell_size/2, y - road_width,
+                    x + self.cell_size/2, y + road_width,
+                    fill='#222222', outline=''
+                )
+                
+                # Vertical road base (black)
+                self.canvas.create_rectangle(
+                    x - road_width, y - self.cell_size/2,
+                    x + road_width, y + self.cell_size/2,
+                    fill='#222222', outline=''
+                )
+                
+                # Road surface with congestion
                 congestion_color_h = self._get_congestion_color(grid.congestion[i, j])
-                self.canvas.create_rectangle(
-                    x - self.cell_size/2, y - self.cell_size/10, 
-                    x + self.cell_size/2, y + self.cell_size/10,
-                    fill='#444444', outline='')
                 
-                # Add congestion overlay if significant
-                if grid.congestion[i, j] > 0.1:
-                    self.canvas.create_rectangle(
-                        x - self.cell_size/2, y - self.cell_size/10, 
-                        x + self.cell_size/2, y + self.cell_size/10,
-                        fill=congestion_color_h, outline='', stipple='gray50')
-                
-                # Vertical road
+                # Horizontal road surface
                 self.canvas.create_rectangle(
-                    x - self.cell_size/10, y - self.cell_size/2, 
-                    x + self.cell_size/10, y + self.cell_size/2,
-                    fill='#444444', outline='')
+                    x - self.cell_size/2 + 2, y - road_width + 2,
+                    x + self.cell_size/2 - 2, y + road_width - 2,
+                    fill='#444444', outline=''
+                )
+                
+                # Vertical road surface
+                self.canvas.create_rectangle(
+                    x - road_width + 2, y - self.cell_size/2 + 2,
+                    x + road_width - 2, y + self.cell_size/2 - 2,
+                    fill='#444444', outline=''
+                )
                 
                 # Add congestion overlay if significant
                 if grid.congestion[i, j] > 0.1:
@@ -118,34 +151,68 @@ class TkinterVisualizer:
                         x + self.cell_size/3, y + self.cell_size/3,
                         outline='orange', width=2)
                 
-                # Draw traffic lights
+                # Draw traffic lights with improved visibility
                 if grid.traffic_lights[i, j] > 0:
-                    # Traffic light box
+                    # Traffic light box shadow
+                    self.canvas.create_rectangle(
+                        x - self.cell_size/6 + 2, y - self.cell_size/6 + 2,
+                        x + self.cell_size/6 + 2, y + self.cell_size/6 + 2,
+                        fill='#404040', outline=''
+                    )
+                    
+                    # Traffic light box with metallic effect
                     self.canvas.create_rectangle(
                         x - self.cell_size/6, y - self.cell_size/6,
                         x + self.cell_size/6, y + self.cell_size/6,
-                        fill='gray', outline='')
+                        fill='#808080',
+                        outline='#606060',
+                        width=2
+                    )
+                    
+                    # Light size and spacing
+                    light_radius = max(4, min(8, self.cell_size/10))
+                    light_spacing = light_radius * 2.5
                     
                     # North-South green (East-West red)
                     if grid.traffic_lights[i, j] == 1:
+                        # NS Green light with glow effect
                         self.canvas.create_oval(
-                            x - 5, y + 5,
-                            x + 5, y + 15,
-                            fill='green', outline='')
+                            x - light_radius - 1, y - light_spacing - 1,
+                            x + light_radius + 1, y - light_spacing + 2*light_radius + 1,
+                            fill='#004400', outline=''
+                        )
                         self.canvas.create_oval(
-                            x + 5, y - 5,
-                            x + 15, y + 5,
-                            fill='red', outline='')
+                            x - light_radius, y - light_spacing,
+                            x + light_radius, y - light_spacing + 2*light_radius,
+                            fill='#00ff00', outline='#008800'
+                        )
+                        
+                        # EW Red light
+                        self.canvas.create_oval(
+                            x + light_spacing - light_radius, y - light_radius,
+                            x + light_spacing + light_radius, y + light_radius,
+                            fill='#ff0000', outline='#800000'
+                        )
                     # East-West green (North-South red)
                     else:
+                        # NS Red light
                         self.canvas.create_oval(
-                            x - 5, y + 5,
-                            x + 5, y + 15,
-                            fill='red', outline='')
+                            x - light_radius, y - light_spacing,
+                            x + light_radius, y - light_spacing + 2*light_radius,
+                            fill='#ff0000', outline='#800000'
+                        )
+                        
+                        # EW Green light with glow effect
                         self.canvas.create_oval(
-                            x + 5, y - 5,
-                            x + 15, y + 5,
-                            fill='green', outline='')
+                            x + light_spacing - light_radius - 1, y - light_radius - 1,
+                            x + light_spacing + light_radius + 1, y + light_radius + 1,
+                            fill='#004400', outline=''
+                        )
+                        self.canvas.create_oval(
+                            x + light_spacing - light_radius, y - light_radius,
+                            x + light_spacing + light_radius, y + light_radius,
+                            fill='#00ff00', outline='#008800'
+                        )
                     # Traffic light box
                     self.canvas.create_rectangle(
                         x - self.cell_size/6, y - self.cell_size/6,
@@ -180,31 +247,41 @@ class TkinterVisualizer:
                     continue
                     
                 # Draw vehicle
-                vx = v.position[0] * self.cell_size
-                vy = (grid.size - 1 - v.position[1]) * self.cell_size
+                vx = v.position[0] * self.cell_size + self.margin
+                vy = (grid.size - 1 - v.position[1]) * self.cell_size + self.margin
                 
-                # Car body
+                # Car shadow (for depth effect)
+                self.canvas.create_rectangle(
+                    vx - self.cell_size/6 + 2, vy - self.cell_size/10 + 2,
+                    vx + self.cell_size/6 + 2, vy + self.cell_size/10 + 2,
+                    fill='#000033', outline=''
+                )
+                
+                # Car body with outline
                 self.canvas.create_rectangle(
                     vx - self.cell_size/6, vy - self.cell_size/10,
                     vx + self.cell_size/6, vy + self.cell_size/10,
-                    fill='blue', outline='')
-                # Car windows
+                    fill='#0066cc', outline='#003366', width=1
+                )
+                
+                # Car windows with slight depth effect
                 self.canvas.create_rectangle(
                     vx - self.cell_size/12, vy - self.cell_size/15,
                     vx + self.cell_size/12, vy + self.cell_size/15,
-                    fill='lightblue', outline='')
+                    fill='#99ccff', outline='#6699cc', width=1
+                )
                 
-                # Display vehicle ID
+                # Display vehicle ID with better visibility
                 self.canvas.create_text(
                     vx, vy,
                     text=str(v.id),
-                    font=("Arial", int(self.cell_size/4)),
+                    font=("Arial", max(10, int(self.cell_size/4))),
                     fill='white'
                 )
                 
                 # Draw destination
-                dx = v.destination[0] * self.cell_size
-                dy = (grid.size - 1 - v.destination[1]) * self.cell_size
+                dx = v.destination[0] * self.cell_size + self.margin
+                dy = (grid.size - 1 - v.destination[1]) * self.cell_size + self.margin
                 
                 # Star shape for destination - yellow if reached, green otherwise
                 star_color = 'yellow' if v.reached else 'limegreen'
