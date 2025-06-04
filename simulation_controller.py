@@ -33,6 +33,9 @@ class SimulationController:
         self.current_step = 0
         self.max_steps = 100
         
+        # Obstacle mode variables
+        self.obstacle_mode = False  # Flag for obstacle placement mode
+        
         # Create GUI window
         self.setup_gui()
     
