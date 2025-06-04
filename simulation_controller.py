@@ -73,6 +73,15 @@ class SimulationController:
         max_steps_slider.grid(row=1, column=1, sticky="ew", padx=5)
         ttk.Label(step_frame, textvariable=self.max_steps_var).grid(row=1, column=2, padx=5)
         
+        # Unlimited steps checkbox
+        self.unlimited_steps_var = tk.BooleanVar(value=False)
+        unlimited_check = ttk.Checkbutton(
+            step_frame, text="Unlimited Steps (until all vehicles reach destination)", 
+            variable=self.unlimited_steps_var,
+            command=self.toggle_unlimited_steps
+        )
+        unlimited_check.grid(row=2, column=0, columnspan=3, sticky="w", padx=5)
+        
         step_frame.columnconfigure(1, weight=1)
         
         # Control buttons
@@ -149,6 +158,19 @@ class SimulationController:
     def update_max_steps(self, val):
         """Update maximum steps"""
         self.max_steps = int(float(val))
+        
+    def toggle_unlimited_steps(self):
+        """Toggle unlimited steps mode"""
+        unlimited = self.unlimited_steps_var.get()
+        if unlimited:
+            self.update_status("無限步數模式已開啟：將運行直到所有車輛到達終點")
+        else:
+            self.update_status(f"已設置步數上限為: {self.max_steps}")
+            
+        # 如果限制步數，啟用滑塊；否則禁用滑塊
+        for widget in self.root.winfo_children():
+            if isinstance(widget, ttk.Scale) and widget.winfo_name() == "max_steps_slider":
+                widget.configure(state="disabled" if unlimited else "normal")
     
     def load_agent(self):
         """Load a saved agent from file"""
@@ -308,6 +330,10 @@ class SimulationController:
         
         # Get number of vehicles
         num_vehicles = self.num_vehicles_var.get()
+        
+        # 重置車輛ID計數器
+        from vehicle import Vehicle
+        Vehicle.next_id = 1
         
         # Create vehicles
         self.vehicles = []

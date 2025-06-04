@@ -2,7 +2,7 @@ import numpy as np
 from visualizer import TkinterVisualizer
 
 class UrbanGrid:
-    def __init__(self, size=10, congestion_update_rate=0.1, traffic_light_cycle=10):
+    def __init__(self, size=20, congestion_update_rate=0.1, traffic_light_cycle=10):
         self.size = size
         self.grid = np.zeros((size, size))  # Grid for the map
         self.congestion = np.zeros((size, size))  # Congestion levels

@@ -1,9 +1,16 @@
 import random
 
 class Vehicle:
+    # Class variable to track vehicle IDs
+    next_id = 1
+    
     def __init__(self, urban_grid, agent, position=None, destination=None):
         self.urban_grid = urban_grid
         self.agent = agent
+        
+        # Assign vehicle ID
+        self.id = Vehicle.next_id
+        Vehicle.next_id += 1
         
         # Random positions if not specified
         if position is None:
@@ -11,6 +18,9 @@ class Vehicle:
                            random.randint(0, urban_grid.size-1))
         else:
             self.position = position
+            
+        # Store start position for display
+        self.start_position = self.position
             
         if destination is None:
             self.destination = (random.randint(0, urban_grid.size-1), 
@@ -26,6 +36,11 @@ class Vehicle:
         self.reached = False
         self.steps = 0
         self.total_reward = 0
+        
+        # 跟踪車輛位置歷史以檢測循環
+        self.position_history = {}  # {position: count}
+        self.position_history[self.position] = 1
+        self.loop_penalty_applied = {}  # {position: bool} 跟踪是否已經對特定位置應用過循環懲罰
     
     def move(self):
         """Move the vehicle according to the Q-learning policy"""
@@ -70,6 +85,25 @@ class Vehicle:
         self.position = new_position
         self.path.append(self.position)
         self.steps += 1
+        
+        # Detect loops
+        if self.position in self.position_history:
+            self.position_history[self.position] += 1
+            
+            # Calculate threshold: adjust loop threshold based on map size, smaller maps use smaller threshold
+            loop_threshold = max(3, min(5, self.urban_grid.size // 5))
+            
+            # If we've visited the same position more than threshold times and haven't applied a loop penalty
+            if self.position_history[self.position] > loop_threshold and not self.position in self.loop_penalty_applied:
+                # Apply loop penalty
+                loop_penalty = -20 * (self.position_history[self.position] - loop_threshold)  # More loops = bigger penalty
+                loop_penalty = max(-100, loop_penalty)  # Limit maximum penalty
+                print(f"Vehicle {self.id} looping at position {self.position}! Applied penalty: {loop_penalty}")
+                reward += loop_penalty
+                self.loop_penalty_applied[self.position] = True
+        else:
+            self.position_history[self.position] = 1
+        
         self.total_reward += reward
         
         # Get new state

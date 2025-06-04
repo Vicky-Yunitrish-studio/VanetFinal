@@ -11,13 +11,13 @@ def run_simulation(episodes=1000, visualize_interval=100, max_steps=200, show_pl
     Args:
         episodes: Number of episodes to run
         visualize_interval: Interval for visualization (set to 0 to disable)
-        max_steps: Maximum steps per episode
+        max_steps: Maximum steps per episode (if 0, run until all vehicles reach destination)
         show_plots: Whether to show plots (can be set to False to suppress all visualization)
         agent: Optional pre-existing agent to continue training (if None, creates a new agent)
     """
     if agent is None:
         # Create new agent
-        urban_grid = UrbanGrid(size=10)
+        urban_grid = UrbanGrid(size=20)  # 將地圖大小從10改為20
         agent = QLearningAgent(urban_grid)
     else:
         # Use existing agent's urban_grid
@@ -29,6 +29,9 @@ def run_simulation(episodes=1000, visualize_interval=100, max_steps=200, show_pl
     success_rate = []
     
     for episode in range(episodes):
+        # 重置車輛ID計數器
+        Vehicle.next_id = 1
+        
         # Reset environment
         urban_grid.reset_congestion()
         
@@ -50,7 +53,10 @@ def run_simulation(episodes=1000, visualize_interval=100, max_steps=200, show_pl
         step = 0
         all_reached = False
         
-        while not all_reached and step < max_steps:
+        # 判斷是否使用無限步數模式 (max_steps=0 表示無限步數)
+        unlimited_steps = (max_steps == 0)
+        
+        while not all_reached and (unlimited_steps or step < max_steps):
             # Update environment
             positions = [v.position for v in vehicles if not v.reached]
             urban_grid.update_congestion(positions)
@@ -110,8 +116,20 @@ def run_simulation(episodes=1000, visualize_interval=100, max_steps=200, show_pl
     return agent
 
 
-def test_incident_response(agent, num_tests=5, visualize=True, show_plot=True):
-    """Test how well agents avoid incidents after learning"""
+def test_incident_response(agent, num_tests=5, visualize=True, show_plot=True, max_steps=50, unlimited_steps=False):
+    """Test how well agents avoid incidents after learning
+    
+    Args:
+        agent: The trained agent to test
+        num_tests: Number of test scenarios to run
+        visualize: Whether to visualize the tests
+        show_plot: Whether to show visualization
+        max_steps: Maximum steps per test
+        unlimited_steps: If True, ignore max_steps and run until vehicle reaches destination
+    """
+    # 重置車輛ID計數器
+    Vehicle.next_id = 1
+    
     urban_grid = agent.urban_grid
     
     for test in range(num_tests):
@@ -132,9 +150,15 @@ def test_incident_response(agent, num_tests=5, visualize=True, show_plot=True):
         
         # Run simulation for this vehicle
         step = 0
-        max_steps = 50
+        # 使用參數傳入的 max_steps 或根據地圖大小調整默認值
+        if unlimited_steps:
+            # 使用無限步數模式，但設置一個很大的數字作為保險
+            effective_max_steps = 10000
+        else:
+            # 根據地圖大小調整最大步數
+            effective_max_steps = max_steps if max_steps > 0 else urban_grid.size * 10
         
-        while not vehicle.reached and step < max_steps:
+        while not vehicle.reached and step < effective_max_steps:
             urban_grid.update_traffic_lights()
             vehicle.move()
             step += 1

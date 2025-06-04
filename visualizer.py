@@ -194,16 +194,52 @@ class TkinterVisualizer:
                     vx + self.cell_size/12, vy + self.cell_size/15,
                     fill='lightblue', outline='')
                 
+                # Display vehicle ID
+                self.canvas.create_text(
+                    vx, vy,
+                    text=str(v.id),
+                    font=("Arial", int(self.cell_size/4)),
+                    fill='white'
+                )
+                
                 # Draw destination
                 dx = v.destination[0] * self.cell_size
                 dy = (grid.size - 1 - v.destination[1]) * self.cell_size
                 
-                # Star shape for destination
+                # Star shape for destination - yellow if reached, green otherwise
+                star_color = 'yellow' if v.reached else 'limegreen'
                 self.canvas.create_text(
                     dx, dy, 
                     text="★", 
                     font=("Arial", int(self.cell_size/2)), 
-                    fill='limegreen')
+                    fill=star_color)
+                
+                # Display destination ID
+                self.canvas.create_text(
+                    dx, dy + self.cell_size/4,
+                    text=str(v.id),
+                    font=("Arial", int(self.cell_size/4)),
+                    fill='black'
+                )
+                
+                # Display start position
+                sx = v.start_position[0] * self.cell_size
+                sy = (grid.size - 1 - v.start_position[1]) * self.cell_size
+                
+                # Draw start position marker (circle)
+                self.canvas.create_oval(
+                    sx - self.cell_size/6, sy - self.cell_size/6,
+                    sx + self.cell_size/6, sy + self.cell_size/6,
+                    fill='orange', outline='black'
+                )
+                
+                # Display start position ID
+                self.canvas.create_text(
+                    sx, sy,
+                    text=str(v.id),
+                    font=("Arial", int(self.cell_size/4)),
+                    fill='black'
+                )
         
         # Update info
         self.status_label.config(text=f"Step: {getattr(grid, 'current_step', 0)}")

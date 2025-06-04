@@ -8,18 +8,22 @@ from simulation import run_simulation, test_incident_response
 from simulation_controller import SimulationController
 
 def train_mode(episodes=200, visualize_interval=50, show_plots=True, max_steps=2000, 
-              save_agent=True, iterations=1, save_iterations=False):
+              save_agent=True, iterations=1, save_iterations=False, unlimited_steps=False):
     """Training mode: Train a Q-learning agent
     
     Args:
         episodes: Number of episodes per iteration
         visualize_interval: Interval for visualization (set to 0 to disable)
         show_plots: Whether to show plots during training
-        max_steps: Maximum steps per episode
+        max_steps: Maximum steps per episode (0 means unlimited, until all vehicles reach destination)
         save_agent: Whether to save the final agent
         iterations: Number of training iterations to run
         save_iterations: Whether to save intermediate agents after each iteration
+        unlimited_steps: If True, ignore max_steps and run until all vehicles reach destination
     """
+    # Adjust max_steps based on unlimited_steps parameter
+    if unlimited_steps:
+        max_steps = 0  # 0 means no step limit
     print(f"Training Q-Learning agent for {iterations} iterations of {episodes} episodes each...")
     
     # For the first iteration, create a new agent
@@ -89,7 +93,7 @@ def simulate_mode(agent=None):
     controller.run()
 
 if __name__ == "__main__":
-    # 解析命令行參數
+    # Parse command line arguments
     parser = argparse.ArgumentParser(description="Q-Learning Urban Traffic Simulation")
     parser.add_argument("--mode", choices=["train", "simulate", "both"], default="both",
                       help="Choose mode: train, simulate, or both")
@@ -105,16 +109,20 @@ if __name__ == "__main__":
                       help="Don't save trained agent to file")
     parser.add_argument("--continue", dest="continue_training", action="store_true",
                       help="Continue training from existing agent.pkl file")
+    parser.add_argument("--unlimited-steps", action="store_true",
+                      help="Run until all vehicles reach destination, regardless of step count")
+    parser.add_argument("--max-steps", type=int, default=2000,
+                      help="Maximum steps per episode (ignored if --unlimited-steps is set)")
     args = parser.parse_args()
     
-    # 設定是否顯示圖表
+    # Set whether to display plots
     show_plots = not args.no_plots
     
     trained_agent = None
     
-    # 根據模式執行相應功能
+    # Execute corresponding functionality based on mode
     if args.mode == "train" or args.mode == "both":
-        # 如果選擇繼續訓練，先嘗試載入現有代理
+        # If continue training is selected, try to load existing agent
         if args.continue_training:
             try:
                 print("Attempting to load existing agent for continued training...")
@@ -137,19 +145,20 @@ if __name__ == "__main__":
                 print(f"Error loading agent: {e}")
                 trained_agent = None
                 
-        # 訓練代理
+        # Train agent
         trained_agent = train_mode(
             episodes=args.episodes,
             visualize_interval=50,
             show_plots=show_plots,
-            max_steps=2000,
+            max_steps=args.max_steps,
             save_agent=not args.no_save,
             iterations=args.iterations,
-            save_iterations=args.save_iterations
+            save_iterations=args.save_iterations,
+            unlimited_steps=args.unlimited_steps
         )
     
     if args.mode == "simulate" or args.mode == "both":
-        # 如果模式是只模擬，嘗試載入已訓練的代理
+        # If mode is simulate only, try to load the trained agent
         if args.mode == "simulate" and not trained_agent:
             try:
                 with open("trained_agent.pkl", "rb") as f:
