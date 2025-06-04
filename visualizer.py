@@ -146,6 +146,32 @@ class TkinterVisualizer:
                             x + 5, y - 5,
                             x + 15, y + 5,
                             fill='green', outline='')
+                    # Traffic light box
+                    self.canvas.create_rectangle(
+                        x - self.cell_size/6, y - self.cell_size/6,
+                        x + self.cell_size/6, y + self.cell_size/6,
+                        fill='gray', outline='')
+                    
+                    # North-South green (East-West red)
+                    if grid.traffic_lights[i, j] == 1:
+                        self.canvas.create_oval(
+                            x - 5, y + 5,
+                            x + 5, y + 15,
+                            fill='green', outline='')
+                        self.canvas.create_oval(
+                            x + 5, y - 5,
+                            x + 15, y + 5,
+                            fill='red', outline='')
+                    # East-West green (North-South red)
+                    else:
+                        self.canvas.create_oval(
+                            x - 5, y + 5,
+                            x + 5, y + 15,
+                            fill='red', outline='')
+                        self.canvas.create_oval(
+                            x + 5, y - 5,
+                            x + 15, y + 5,
+                            fill='green', outline='')
         
         # Draw vehicles and destinations
         if hasattr(grid, 'vehicles') and grid.vehicles:
