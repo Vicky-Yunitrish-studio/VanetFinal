@@ -22,8 +22,15 @@ def train_mode(episodes=200, visualize_interval=50, show_plots=True, max_steps=2
     # Save trained agent
     if save_agent and trained_agent:
         try:
+            # Prepare agent for saving (remove tkinter objects)
+            visualizer_backup = trained_agent.prepare_for_save()
+            
+            # Save agent to file
             with open("trained_agent.pkl", "wb") as f:
                 pickle.dump(trained_agent, f)
+                
+            # Restore agent after saving
+            trained_agent.restore_after_save(visualizer_backup)
             print("Trained agent saved to 'trained_agent.pkl'")
         except Exception as e:
             print(f"Error saving agent: {e}")
@@ -70,6 +77,16 @@ if __name__ == "__main__":
             try:
                 with open("trained_agent.pkl", "rb") as f:
                     trained_agent = pickle.load(f)
+                    
+                # Make sure urban_grid is properly initialized
+                if not hasattr(trained_agent, 'urban_grid') or trained_agent.urban_grid is None:
+                    from urban_grid import UrbanGrid
+                    trained_agent.urban_grid = UrbanGrid(
+                        size=trained_agent.grid_size,
+                        congestion_update_rate=trained_agent.grid_congestion_update_rate,
+                        traffic_light_cycle=trained_agent.grid_traffic_light_cycle
+                    )
+                    
                 print("Loaded existing trained agent")
             except FileNotFoundError:
                 print("No saved agent found. Please train an agent first or create one in the simulation controller")

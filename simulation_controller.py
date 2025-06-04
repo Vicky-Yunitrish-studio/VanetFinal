@@ -165,6 +165,16 @@ class SimulationController:
             if filename:
                 with open(filename, 'rb') as f:
                     self.agent = pickle.load(f)
+                
+                # Make sure urban_grid is properly initialized
+                if not hasattr(self.agent, 'urban_grid') or self.agent.urban_grid is None:
+                    from urban_grid import UrbanGrid
+                    self.agent.urban_grid = UrbanGrid(
+                        size=self.agent.grid_size,
+                        congestion_update_rate=self.agent.grid_congestion_update_rate,
+                        traffic_light_cycle=self.agent.grid_traffic_light_cycle
+                    )
+                
                 self.urban_grid = self.agent.urban_grid
                 self.update_status(f"Agent loaded from {filename}")
         except Exception as e:
@@ -185,8 +195,15 @@ class SimulationController:
             )
             
             if filename:
+                # Prepare agent for saving (remove tkinter objects)
+                visualizer_backup = self.agent.prepare_for_save()
+                
+                # Save to file
                 with open(filename, 'wb') as f:
                     pickle.dump(self.agent, f)
+                
+                # Restore agent after saving
+                self.agent.restore_after_save(visualizer_backup)
                 self.update_status(f"Agent saved to {filename}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save agent: {str(e)}")

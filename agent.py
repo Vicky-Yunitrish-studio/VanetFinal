@@ -10,6 +10,29 @@ class QLearningAgent:
         self.epsilon = epsilon
         self.q_table = defaultdict(lambda: np.zeros(4))  # Up, Right, Down, Left
         self.actions = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # Up, Right, Down, Left
+    
+    def prepare_for_save(self):
+        """Prepare agent for pickling by removing unpicklable parts"""
+        # Store the grid parameters we need to recreate the urban_grid
+        self.grid_size = self.urban_grid.size
+        self.grid_congestion_update_rate = self.urban_grid.congestion_update_rate
+        self.grid_traffic_light_cycle = self.urban_grid.traffic_light_cycle
+        
+        # Store the grid state but remove visualizer reference
+        if hasattr(self.urban_grid, 'visualizer'):
+            self.visualizer_existed = True
+            visualizer_backup = self.urban_grid.visualizer
+            self.urban_grid.visualizer = None
+        else:
+            self.visualizer_existed = False
+            visualizer_backup = None
+            
+        return visualizer_backup
+    
+    def restore_after_save(self, visualizer_backup):
+        """Restore agent after pickling"""
+        if self.visualizer_existed and visualizer_backup is not None:
+            self.urban_grid.visualizer = visualizer_backup
         
     def get_state_key(self, position, congestion_level):
         """Convert state to a hashable key"""
@@ -56,3 +79,34 @@ class QLearningAgent:
         self.q_table[state][action] = (1 - self.learning_rate) * self.q_table[state][action] + \
                                      self.learning_rate * (reward + self.discount_factor * 
                                                          self.q_table[next_state][best_next_action])
+    
+    def __getstate__(self):
+        """Called when pickling the agent - prepare for serialization"""
+        state = self.__dict__.copy()
+        
+        # Convert defaultdict q_table to regular dict for pickling
+        state['q_table'] = dict(self.q_table)
+        
+        # Remove unpicklable parts
+        visualizer_backup = self.prepare_for_save()
+        state['_visualizer_backup'] = None  # We don't actually save the visualizer
+        
+        return state
+    
+    def __setstate__(self, state):
+        """Called when unpickling the agent - restore after deserialization"""
+        self.__dict__.update(state)
+        
+        # Convert back to defaultdict
+        self.q_table = defaultdict(lambda: np.zeros(4))
+        for k, v in state['q_table'].items():
+            self.q_table[k] = v
+        
+        # Recreate urban_grid if needed
+        if not hasattr(self, 'urban_grid') or self.urban_grid is None:
+            from urban_grid import UrbanGrid
+            self.urban_grid = UrbanGrid(
+                size=self.grid_size, 
+                congestion_update_rate=self.grid_congestion_update_rate,
+                traffic_light_cycle=self.grid_traffic_light_cycle
+            )
