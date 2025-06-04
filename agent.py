@@ -3,11 +3,11 @@ import random
 from collections import defaultdict
 
 class QLearningAgent:
-    def __init__(self, urban_grid, learning_rate=0.1, discount_factor=0.9, epsilon=0.1):
+    def __init__(self, urban_grid, learning_rate=0.2, discount_factor=0.95, epsilon=0.2):
         self.urban_grid = urban_grid
         self.learning_rate = learning_rate
         self.discount_factor = discount_factor
-        self.epsilon = epsilon
+        self.epsilon = epsilon  # Increased exploration rate
         self.q_table = defaultdict(lambda: np.zeros(4))  # Up, Right, Down, Left
         self.actions = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # Up, Right, Down, Left
     
@@ -38,7 +38,17 @@ class QLearningAgent:
         """Convert state to a hashable key"""
         # Discretize congestion level to 5 levels
         congestion_discrete = min(4, int(congestion_level * 5))
-        return (position[0], position[1], congestion_discrete)
+        
+        # Get direction to destination (discretized to 8 directions)
+        if hasattr(self, 'current_destination'):
+            dx = self.current_destination[0] - position[0]
+            dy = self.current_destination[1] - position[1]
+            angle = np.arctan2(dy, dx)
+            direction = int(((angle + np.pi) * 4 / np.pi + 0.5) % 8)
+        else:
+            direction = 0
+        
+        return (position[0], position[1], congestion_discrete, direction)
     
     def choose_action(self, state, position):
         """Choose an action using epsilon-greedy policy"""

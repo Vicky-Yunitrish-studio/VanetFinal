@@ -32,6 +32,9 @@ class Vehicle:
         else:
             self.destination = destination
             
+        # Share destination with agent for better state representation
+        self.agent.current_destination = self.destination
+            
         self.path = [self.position]
         self.reached = False
         self.steps = 0
@@ -125,8 +128,13 @@ class Vehicle:
         old_dist = manhattan_dist(self.position, self.destination)
         new_dist = manhattan_dist(new_position, self.destination)
         proximity_reward = old_dist - new_dist  # +1 if closer, -1 if farther, 0 if same
-        # You can scale this reward if you want a stronger effect:
-        reward += proximity_reward * 2  # 2 can be adjusted for effect strength
+        
+        # Scale proximity reward based on distance to destination
+        # The closer to destination, the higher the reward multiplier
+        max_possible_dist = self.urban_grid.size * 2  # Maximum possible Manhattan distance
+        progress = 1 - (new_dist / max_possible_dist)  # 0 when furthest, 1 when at destination
+        proximity_multiplier = 5 + (15 * progress)  # Scales from 5 to 20 based on progress
+        reward += proximity_reward * proximity_multiplier
         # --- End proximity reward ---
         
         # Get new state
