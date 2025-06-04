@@ -233,7 +233,7 @@ class SimulationController:
     
     def create_new_agent(self):
         """Create a new agent when none is loaded"""
-        grid_size = 10  # Default size
+        grid_size = 20  # Default size
         self.urban_grid = UrbanGrid(size=grid_size)
         self.agent = QLearningAgent(self.urban_grid)
         self.update_status("New agent created")

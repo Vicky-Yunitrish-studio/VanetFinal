@@ -4,7 +4,7 @@ import random
 from matplotlib.colors import LinearSegmentedColormap
 
 class TkinterVisualizer:
-    def __init__(self, grid_size=10, cell_size=50):
+    def __init__(self, grid_size=20, cell_size=35):  # Adjusted for 20x20 grid
         self.grid_size = grid_size
         self.cell_size = cell_size
         
