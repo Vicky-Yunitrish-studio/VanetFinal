@@ -5,7 +5,7 @@ from urban_grid import UrbanGrid
 from agent import QLearningAgent
 from vehicle import Vehicle
 
-def run_simulation(episodes=1000, visualize_interval=100, max_steps=200, show_plots=True):
+def run_simulation(episodes=1000, visualize_interval=100, max_steps=200, show_plots=True, agent=None):
     """Run the full simulation
     
     Args:
@@ -13,9 +13,15 @@ def run_simulation(episodes=1000, visualize_interval=100, max_steps=200, show_pl
         visualize_interval: Interval for visualization (set to 0 to disable)
         max_steps: Maximum steps per episode
         show_plots: Whether to show plots (can be set to False to suppress all visualization)
+        agent: Optional pre-existing agent to continue training (if None, creates a new agent)
     """
-    urban_grid = UrbanGrid(size=10)
-    agent = QLearningAgent(urban_grid)
+    if agent is None:
+        # Create new agent
+        urban_grid = UrbanGrid(size=10)
+        agent = QLearningAgent(urban_grid)
+    else:
+        # Use existing agent's urban_grid
+        urban_grid = agent.urban_grid
     
     # Statistics tracking
     episode_rewards = []
