@@ -33,6 +33,11 @@ class SimulationController:
         self.current_step = 0
         self.max_steps = 100
         
+        # Store default Q-learning values but create StringVars after Tk initialization
+        self.default_learning_rate = "0.2"
+        self.default_discount_factor = "0.95"
+        self.default_epsilon = "0.2"
+        
         # Obstacle mode variables
         self.obstacle_mode = False  # Flag for obstacle placement mode
         
@@ -44,6 +49,17 @@ class SimulationController:
         self.root = tk.Tk()
         self.root.title("Q-Learning Traffic Simulation Controller")
         self.root.geometry("800x650")
+        
+        # Now that Tk is initialized, create the StringVars
+        self.learning_rate = tk.StringVar(value=self.default_learning_rate)
+        self.discount_factor = tk.StringVar(value=self.default_discount_factor)
+        self.epsilon = tk.StringVar(value=self.default_epsilon)
+        
+        # Create a custom style for buttons
+        style = ttk.Style()
+        # Create an accent button style for toggle buttons
+        style.configure("Accent.TButton", background="#4CAF50", foreground="white", 
+                      font=('Arial', 10, 'bold'))
         
         # Main frame
         main_frame = ttk.Frame(self.root, padding="10")
@@ -60,7 +76,7 @@ class SimulationController:
         ttk.Label(step_frame, text="Step Delay (ms):").grid(row=0, column=0, padx=5)
         self.delay_var = tk.IntVar(value=self.step_delay)
         delay_slider = ttk.Scale(
-            step_frame, from_=50, to=2000, orient=tk.HORIZONTAL, 
+            step_frame, from_=4, to=2000, orient=tk.HORIZONTAL, 
             variable=self.delay_var, command=self.update_delay
         )
         delay_slider.grid(row=0, column=1, sticky="ew", padx=5)
@@ -70,7 +86,7 @@ class SimulationController:
         ttk.Label(step_frame, text="Max Steps:").grid(row=1, column=0, padx=5)
         self.max_steps_var = tk.IntVar(value=self.max_steps)
         max_steps_slider = ttk.Scale(
-            step_frame, from_=10, to=500, orient=tk.HORIZONTAL, 
+            step_frame, from_=10, to=5000, orient=tk.HORIZONTAL, 
             variable=self.max_steps_var, command=self.update_max_steps
         )
         max_steps_slider.grid(row=1, column=1, sticky="ew", padx=5)
@@ -111,9 +127,17 @@ class SimulationController:
         ttk.Button(agent_frame, text="Load Agent", command=self.load_agent).pack(side=tk.LEFT, padx=5)
         ttk.Button(agent_frame, text="Save Agent", command=self.save_agent).pack(side=tk.LEFT, padx=5)
         
-        # Create incident button
-        ttk.Button(agent_frame, text="Add Random Obstacles", 
+        # Obstacle buttons
+        obstacle_frame = ttk.Frame(agent_frame)
+        obstacle_frame.pack(side=tk.RIGHT)
+        
+        ttk.Button(obstacle_frame, text="Add Random Obstacles", 
                   command=self.add_random_obstacles).pack(side=tk.RIGHT, padx=5)
+                  
+        # Obstacle mode toggle button
+        self.obstacle_mode_btn = ttk.Button(obstacle_frame, text="Obastacle Mode", style="TButton", 
+                                          command=self.toggle_obstacle_mode)
+        self.obstacle_mode_btn.pack(side=tk.RIGHT, padx=5)
         
         # Number of vehicles
         veh_frame = ttk.Frame(control_frame)
@@ -123,6 +147,34 @@ class SimulationController:
         self.num_vehicles_var = tk.IntVar(value=5)
         ttk.Spinbox(veh_frame, from_=1, to=20, width=5, 
                    textvariable=self.num_vehicles_var).pack(side=tk.LEFT, padx=5)
+        
+        # Q-learning parameters
+        qlearn_frame = ttk.LabelFrame(control_frame, text="Q-Learning parameter", padding="10")
+        qlearn_frame.pack(fill=tk.X, pady=5)
+        
+        # Parameter entries row
+        param_frame = ttk.Frame(qlearn_frame)
+        param_frame.pack(fill=tk.X, pady=5)
+        
+        # Learning Rate
+        ttk.Label(param_frame, text="Learning Rate:").grid(row=0, column=0, padx=5, sticky="w")
+        self.lr_entry = ttk.Entry(param_frame, width=8, textvariable=self.learning_rate)
+        self.lr_entry.grid(row=0, column=1, padx=5, pady=2, sticky="w")
+        
+        # Discount Factor
+        ttk.Label(param_frame, text="Discount Factor:").grid(row=1, column=0, padx=5, sticky="w")
+        self.df_entry = ttk.Entry(param_frame, width=8, textvariable=self.discount_factor)
+        self.df_entry.grid(row=1, column=1, padx=5, pady=2, sticky="w")
+        
+        # Epsilon
+        ttk.Label(param_frame, text="Epsilon:").grid(row=2, column=0, padx=5, sticky="w")
+        self.eps_entry = ttk.Entry(param_frame, width=8, textvariable=self.epsilon)
+        self.eps_entry.grid(row=2, column=1, padx=5, pady=2, sticky="w")
+        
+        # Apply button
+        ttk.Button(param_frame, text="set", command=self.apply_q_params).grid(row=1, column=2, padx=5, rowspan=1)
+        
+        param_frame.columnconfigure(0, weight=1)
         
         # Status panel
         status_frame = ttk.LabelFrame(main_frame, text="Simulation Status", padding="10")
@@ -166,9 +218,9 @@ class SimulationController:
         """Toggle unlimited steps mode"""
         unlimited = self.unlimited_steps_var.get()
         if unlimited:
-            self.update_status("無限步數模式已開啟：將運行直到所有車輛到達終點")
+            self.update_status("unlimited steps mode enabled: simulation will run until all vehicles reach their destination")
         else:
-            self.update_status(f"已設置步數上限為: {self.max_steps}")
+            self.update_status(f"set step limit to : {self.max_steps}")
             
         # 如果限制步數，啟用滑塊；否則禁用滑塊
         for widget in self.root.winfo_children():
@@ -234,12 +286,55 @@ class SimulationController:
             messagebox.showerror("Error", f"Failed to save agent: {str(e)}")
             self.update_status(f"Error saving agent: {str(e)}")
     
+    def apply_q_params(self):
+        """Apply Q-learning parameters to the current agent"""
+        if not self.agent:
+            self.update_status("Have to setup q-learning parameters when no agent loaded")
+            return
+            
+        try:
+            # Convert string vars to float
+            lr = float(self.learning_rate.get())
+            df = float(self.discount_factor.get())
+            eps = float(self.epsilon.get())
+            
+            # Validate parameters
+            if not (0 < lr <= 1) or not (0 < df <= 1) or not (0 <= eps <= 1):
+                self.update_status("must between 0 and 1")
+                return
+                
+            # Update agent parameters
+            self.agent.learning_rate = lr
+            self.agent.discount_factor = df
+            self.agent.epsilon = eps
+            self.update_status(f"Q-learning parameters: LR={lr}, DF={df}, EPS={eps}")
+        except ValueError:
+            self.update_status("must be available float values")
+    
     def create_new_agent(self):
         """Create a new agent when none is loaded"""
         grid_size = 20  # Default size
         self.urban_grid = UrbanGrid(size=grid_size)
-        self.agent = QLearningAgent(self.urban_grid)
-        self.update_status("New agent created")
+        
+        try:
+            # Get parameter values from UI
+            lr = float(self.learning_rate.get())
+            df = float(self.discount_factor.get())
+            eps = float(self.epsilon.get())
+            
+            # Validate parameters
+            if not (0 < lr <= 1) or not (0 < df <= 1) or not (0 <= eps <= 1):
+                self.update_status("must between 0 and 1")
+                self.agent = QLearningAgent(self.urban_grid)
+            else:
+                # Create agent with specified parameters
+                self.agent = QLearningAgent(self.urban_grid, learning_rate=lr, 
+                                           discount_factor=df, epsilon=eps)
+                self.update_status(f"new agent created: LR={lr}, DF={df}, EPS={eps}")
+        except ValueError:
+            # If there's an error parsing parameters, use defaults
+            self.update_status("value error in Q-learning parameters, using defaults")
+            self.agent = QLearningAgent(self.urban_grid)
     
     def start_simulation(self):
         """Start or resume the simulation"""
@@ -256,6 +351,11 @@ class SimulationController:
             self.running = True
             self.paused = False
             self.update_status("Simulation started")
+            
+            # Lock Q-learning parameter inputs
+            self.lr_entry.config(state="disabled")
+            self.df_entry.config(state="disabled")
+            self.eps_entry.config(state="disabled")
         else:
             # Resume paused simulation
             self.paused = False
@@ -278,8 +378,18 @@ class SimulationController:
             self.pause_btn.config(text="Resume")
             self.update_status("Simulation paused")
         else:
+            # If we're in obstacle mode, exit obstacle mode when resuming
+            if self.obstacle_mode:
+                self.toggle_obstacle_mode()  # Turn off obstacle mode
+                
             self.pause_btn.config(text="Pause")
             self.update_status("Simulation resumed")
+            
+            # Update optimal paths for all vehicles since obstacles may have been modified
+            for vehicle in self.vehicles:
+                if not vehicle.reached:
+                    vehicle.update_optimal_path()
+                    
             self.run_simulation_step()
     
     def step_simulation(self):
@@ -323,6 +433,12 @@ class SimulationController:
         self.completed_label.config(text="0/0")
         self.start_btn.config(state="normal")
         self.pause_btn.config(state="disabled")
+        
+        # Unlock Q-learning parameter inputs
+        self.lr_entry.config(state="normal")
+        self.df_entry.config(state="normal")
+        self.eps_entry.config(state="normal")
+        
         self.update_status("Simulation reset")
     
     def initialize_vehicles(self):
@@ -347,6 +463,74 @@ class SimulationController:
         self.update_status(f"Created {num_vehicles} vehicles")
         self.completed_label.config(text=f"0/{num_vehicles}")
     
+    def toggle_obstacle_mode(self):
+        """Toggle the obstacle placement mode"""
+        if not self.urban_grid:
+            self.update_status("No grid available")
+            return
+            
+        # Can only toggle obstacle mode when paused or not running
+        if self.running and not self.paused:
+            self.update_status("must stop to eneter place obstacle mode")
+            return
+            
+        # Toggle obstacle mode
+        self.obstacle_mode = not self.obstacle_mode
+        
+        # Update button text and appearance
+        if self.obstacle_mode:
+            self.obstacle_mode_btn.config(text="exit place obstacle mode", style="Accent.TButton")
+            self.update_status("entered place obstacle mode：click to add/remove obstacles")
+            
+            # Set up the canvas click handler in visualizer
+            if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
+                self.urban_grid.visualizer.canvas.bind("<Button-1>", self.on_canvas_click)
+                
+                # Update visualization to show it's in obstacle mode
+                self.urban_grid.visualizer.update_display(self.urban_grid, self.vehicles, obstacle_mode=True)
+        else:
+            self.obstacle_mode_btn.config(text="place obstacle mode", style="TButton")
+            self.update_status("exit place obstacle mode")
+            
+            # Remove the canvas click handler
+            if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
+                self.urban_grid.visualizer.canvas.unbind("<Button-1>")
+                
+                # Update visualization to normal mode
+                self.urban_grid.visualizer.update_display(self.urban_grid, self.vehicles)
+    
+    def on_canvas_click(self, event):
+        """Handle canvas clicks to add/remove obstacles"""
+        if not self.obstacle_mode or not self.urban_grid or not hasattr(self.urban_grid, 'visualizer'):
+            return
+            
+        # Convert click coordinates to grid coordinates
+        canvas = self.urban_grid.visualizer.canvas
+        cell_size = self.urban_grid.visualizer.cell_size
+        margin = self.urban_grid.visualizer.margin
+        
+        # Calculate grid coordinates
+        x_pos = int((event.x - margin) / cell_size)
+        y_pos = int(self.urban_grid.size - 1 - ((event.y - margin) / cell_size))
+        
+        # Ensure coordinates are within grid bounds
+        if 0 <= x_pos < self.urban_grid.size and 0 <= y_pos < self.urban_grid.size:
+            # Toggle obstacle at this position
+            if self.urban_grid.obstacles[x_pos, y_pos]:
+                self.urban_grid.remove_obstacle(x_pos, y_pos)
+                self.update_status(f"removed ({x_pos}, {y_pos}) 's obstacle")
+            else:
+                self.urban_grid.add_obstacle(x_pos, y_pos)
+                self.update_status(f"added ({x_pos}, {y_pos}) 's obstacle")
+            
+            # Update vehicles' optimal paths if needed
+            for vehicle in self.vehicles:
+                if not vehicle.reached:
+                    vehicle.update_optimal_path()
+            
+            # Update visualization
+            self.urban_grid.visualize(self.vehicles, show_plot=True)
+
     def add_random_obstacles(self):
         """Add random obstacles to the grid"""
         if not self.urban_grid:

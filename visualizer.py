@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import Canvas, Frame, Label
+from tkinter import Canvas, Frame, Label, ttk
 import random
 from matplotlib.colors import LinearSegmentedColormap
 
@@ -66,19 +66,38 @@ class TkinterVisualizer:
         shade = int(100 + random.random() * 100)  # Shade of gray (100-200)
         return f'#{shade:02x}{shade:02x}{shade:02x}'
     
-    def update_display(self, grid):
-        """Update the display with current grid state"""
+    def update_display(self, grid, vehicles=None, obstacle_mode=False):
+        """Update the display with current grid state
+        
+        Args:
+            grid: The urban grid to display
+            vehicles: Optional list of vehicles to display (if None, uses grid.vehicles)
+            obstacle_mode: Whether in obstacle placement mode (changes appearance)
+        """
         if self.is_closed:
             return
             
         # Clear canvas
         self.canvas.delete("all")
         
+        # Use vehicles from parameter if provided, otherwise use grid.vehicles
+        if vehicles is not None:
+            grid.vehicles = vehicles
+        
         # Draw the city grid
         for i in range(grid.size):
             for j in range(grid.size):
                 x = i * self.cell_size + self.margin
                 y = (grid.size - 1 - j) * self.cell_size + self.margin  # Invert y for proper orientation
+                
+                # Draw grid indicators when in obstacle mode
+                if obstacle_mode:
+                    # Draw light grid borders
+                    self.canvas.create_rectangle(
+                        x - self.cell_size/2, y - self.cell_size/2,
+                        x + self.cell_size/2, y + self.cell_size/2,
+                        outline='gray70', dash=(4, 4), width=1, fill=''
+                    )
                 
                 # Draw building block (in each grid corner)
                 if i > 0 and j > 0:
@@ -164,20 +183,39 @@ class TkinterVisualizer:
                 
                 # Draw obstacles
                 if grid.obstacles[i, j]:
-                    # X mark
-                    self.canvas.create_line(
-                        x - self.cell_size/5, y - self.cell_size/5,
-                        x + self.cell_size/5, y + self.cell_size/5,
-                        fill='red', width=3)
-                    self.canvas.create_line(
-                        x - self.cell_size/5, y + self.cell_size/5,
-                        x + self.cell_size/5, y - self.cell_size/5,
-                        fill='red', width=3)
-                    # Caution circle
-                    self.canvas.create_oval(
-                        x - self.cell_size/3, y - self.cell_size/3,
-                        x + self.cell_size/3, y + self.cell_size/3,
-                        outline='orange', width=2)
+                    if obstacle_mode:
+                        # Enhanced appearance in obstacle mode
+                        # Red circle with X mark
+                        self.canvas.create_oval(
+                            x - self.cell_size/3, y - self.cell_size/3,
+                            x + self.cell_size/3, y + self.cell_size/3,
+                            fill='#ff6666', outline='red', width=2)
+                        # X mark
+                        self.canvas.create_line(
+                            x - self.cell_size/4, y - self.cell_size/4,
+                            x + self.cell_size/4, y + self.cell_size/4,
+                            fill='black', width=2)
+                        self.canvas.create_line(
+                            x - self.cell_size/4, y + self.cell_size/4,
+                            x + self.cell_size/4, y - self.cell_size/4,
+                            fill='black', width=2)
+                    else:
+                        # Normal X mark
+                        self.canvas.create_line(
+                            x - self.cell_size/5, y - self.cell_size/5,
+                            x + self.cell_size/5, y + self.cell_size/5,
+                            fill='red', width=3)
+                        self.canvas.create_line(
+                            x - self.cell_size/5, y + self.cell_size/5,
+                            x + self.cell_size/5, y - self.cell_size/5,
+                            fill='red', width=3)
+                    
+                    # Caution circle (only in non-obstacle mode)
+                    if not obstacle_mode:
+                        self.canvas.create_oval(
+                            x - self.cell_size/3, y - self.cell_size/3,
+                            x + self.cell_size/3, y + self.cell_size/3,
+                            outline='orange', width=2)
                 
                 # Draw traffic lights with improved visibility
                 if grid.traffic_lights[i, j] > 0:
@@ -339,7 +377,12 @@ class TkinterVisualizer:
                 )
         
         # Update info
-        self.status_label.config(text=f"Step: {getattr(grid, 'current_step', 0)}")
+        status_text = f"Step: {getattr(grid, 'current_step', 0)}"
+        if obstacle_mode:
+            status_text += " | 障礙物放置模式：點擊放置或移除障礙物"
+            self.status_label.config(text=status_text, foreground="red", font=("Arial", 10, "bold"))
+        else:
+            self.status_label.config(text=status_text, foreground="black", font=("Arial", 10))
         
         # Update the window
         self.root.update()

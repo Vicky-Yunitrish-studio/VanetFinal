@@ -89,6 +89,17 @@ class QLearningAgent:
         self.q_table[state][action] = (1 - self.learning_rate) * self.q_table[state][action] + \
                                      self.learning_rate * (reward + self.discount_factor * 
                                                          self.q_table[next_state][best_next_action])
+                                                         
+    def reset_state_q_values(self, state):
+        """Reset Q-values for a state to encourage exploration of other paths
+        
+        This is called when a loop is detected in the vehicle's path, to 
+        discourage the agent from getting stuck in loops
+        """
+        # Set Q-values for this state to below average to discourage revisiting
+        avg_q = np.mean(list(self.q_table.values()))
+        # Reset to small negative values to encourage exploration
+        self.q_table[state] = np.ones(4) * -0.5
     
     def __getstate__(self):
         """Called when pickling the agent - prepare for serialization"""

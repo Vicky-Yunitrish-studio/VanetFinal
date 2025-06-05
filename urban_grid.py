@@ -71,12 +71,13 @@ class UrbanGrid:
         
         return np.mean(self.congestion[x_min:x_max+1, y_min:y_max+1])
 
-    def visualize(self, vehicles=None, show_plot=True):
+    def visualize(self, vehicles=None, show_plot=True, obstacle_mode=False):
         """Visualize the grid with congestion and vehicles using Tkinter
         
         Args:
             vehicles: List of vehicles to visualize
             show_plot: Whether to display the visualization (set to False to suppress display)
+            obstacle_mode: Whether in obstacle placement mode (changes appearance)
         """
         if not show_plot:
             return
@@ -92,4 +93,4 @@ class UrbanGrid:
         self.current_step = getattr(self, 'current_step', 0) + 1
             
         # Update the display
-        self.visualizer.update_display(self)
+        self.visualizer.update_display(self, vehicles=vehicles, obstacle_mode=obstacle_mode)
