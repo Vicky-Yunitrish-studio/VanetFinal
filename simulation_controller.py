@@ -1,7 +1,59 @@
 """
 Simulation Controller for Q-Learning Urban Traffic Simulation
-This module provides interactive controls for simulating vehicle movement
-based on a trained Q-learning agent.
+This module provides interactive controls for simulating vehicle mo        # Obstacle buttons
+        obstacle_frame = ttk.Fr        # Apply button
+        ttk.Button(param_frame, text="Apply", command=self.apply_q_params).grid(row=1, column=2, padx=5, rowspan=1)
+        
+        param_frame.columnconfigure(0, weight=1)
+        
+        # Congestion adjustment controls
+        congestion_frame = ttk.LabelFrame(control_frame, text="Congestion Controls", padding="10")
+        congestion_frame.pack(fill=tk.X, pady=5)
+        
+        # Congestion level slider
+        cong_control_frame = ttk.Frame(congestion_frame)
+        cong_control_frame.pack(fill=tk.X, pady=5)
+        
+        ttk.Label(cong_control_frame, text="Congestion Level:").grid(row=0, column=0, padx=5, sticky="w")
+        self.congestion_var = tk.DoubleVar(value=self.congestion_level)
+        congestion_slider = ttk.Scale(
+            cong_control_frame, from_=0.0, to=1.0, orient=tk.HORIZONTAL,
+            variable=self.congestion_var, command=self.update_congestion_level
+        )
+        congestion_slider.grid(row=0, column=1, sticky="ew", padx=5)
+        self.congestion_label = ttk.Label(cong_control_frame, text=f"{self.congestion_level:.2f}")
+        self.congestion_label.grid(row=0, column=2, padx=5)
+        
+        # Congestion adjustment radius
+        ttk.Label(cong_control_frame, text="Adjustment Radius:").grid(row=1, column=0, padx=5, sticky="w")
+        self.congestion_radius_var = tk.IntVar(value=2)
+        radius_slider = ttk.Scale(
+            cong_control_frame, from_=1, to=5, orient=tk.HORIZONTAL,
+            variable=self.congestion_radius_var, command=self.update_congestion_radius
+        )
+        radius_slider.grid(row=1, column=1, sticky="ew", padx=5)
+        self.radius_label = ttk.Label(cong_control_frame, text="2")
+        self.radius_label.grid(row=1, column=2, padx=5)
+        
+        # Clear congestion button
+        ttk.Button(cong_control_frame, text="Clear All Congestion", 
+                  command=self.clear_all_congestion).grid(row=2, column=0, columnspan=3, pady=5)
+        
+        cong_control_frame.columnconfigure(1, weight=1)agent_frame)
+        obstacle_frame.pack(side=tk.RIGHT)
+        
+        ttk.Button(obstacle_frame, text="Add Random Obstacles", 
+                  command=self.add_random_obstacles).pack(side=tk.RIGHT, padx=5)
+                  
+        # Obstacle mode toggle button
+        self.obstacle_mode_btn = ttk.Button(obstacle_frame, text="Obstacle Mode", 
+                                          command=self.toggle_obstacle_mode)
+        self.obstacle_mode_btn.pack(side=tk.RIGHT, padx=5)
+        
+        # Congestion mode toggle button
+        self.congestion_mode_btn = ttk.Button(obstacle_frame, text="Congestion Mode", 
+                                            command=self.toggle_congestion_mode)
+        self.congestion_mode_btn.pack(side=tk.RIGHT, padx=5)d on a trained Q-learning agent.
 """
 import tkinter as tk
 import numpy as np
@@ -40,6 +92,10 @@ class SimulationController:
         
         # Obstacle mode variables
         self.obstacle_mode = False  # Flag for obstacle placement mode
+        
+        # Congestion adjustment mode variables
+        self.congestion_mode = False  # Flag for congestion adjustment mode
+        self.congestion_level = 0.5  # Default congestion level (0.0 to 1.0)
         
         # Create GUI window
         self.setup_gui()
@@ -135,9 +191,14 @@ class SimulationController:
                   command=self.add_random_obstacles).pack(side=tk.RIGHT, padx=5)
                   
         # Obstacle mode toggle button
-        self.obstacle_mode_btn = ttk.Button(obstacle_frame, text="Obastacle Mode", style="TButton", 
+        self.obstacle_mode_btn = ttk.Button(obstacle_frame, text="Obstacle Mode", 
                                           command=self.toggle_obstacle_mode)
         self.obstacle_mode_btn.pack(side=tk.RIGHT, padx=5)
+        
+        # Congestion mode toggle button
+        self.congestion_mode_btn = ttk.Button(obstacle_frame, text="Congestion Mode", 
+                                            command=self.toggle_congestion_mode)
+        self.congestion_mode_btn.pack(side=tk.RIGHT, padx=5)
         
         # Number of vehicles
         veh_frame = ttk.Frame(control_frame)
@@ -172,9 +233,44 @@ class SimulationController:
         self.eps_entry.grid(row=2, column=1, padx=5, pady=2, sticky="w")
         
         # Apply button
-        ttk.Button(param_frame, text="set", command=self.apply_q_params).grid(row=1, column=2, padx=5, rowspan=1)
+        ttk.Button(param_frame, text="Apply", command=self.apply_q_params).grid(row=1, column=2, padx=5, rowspan=1)
         
         param_frame.columnconfigure(0, weight=1)
+        
+        # Congestion adjustment controls
+        congestion_frame = ttk.LabelFrame(control_frame, text="Congestion Controls", padding="10")
+        congestion_frame.pack(fill=tk.X, pady=5)
+        
+        # Congestion level slider
+        cong_control_frame = ttk.Frame(congestion_frame)
+        cong_control_frame.pack(fill=tk.X, pady=5)
+        
+        ttk.Label(cong_control_frame, text="Congestion Level:").grid(row=0, column=0, padx=5, sticky="w")
+        self.congestion_var = tk.DoubleVar(value=self.congestion_level)
+        congestion_slider = ttk.Scale(
+            cong_control_frame, from_=0.0, to=1.0, orient=tk.HORIZONTAL,
+            variable=self.congestion_var, command=self.update_congestion_level
+        )
+        congestion_slider.grid(row=0, column=1, sticky="ew", padx=5)
+        self.congestion_label = ttk.Label(cong_control_frame, text=f"{self.congestion_level:.2f}")
+        self.congestion_label.grid(row=0, column=2, padx=5)
+        
+        # Congestion adjustment radius
+        ttk.Label(cong_control_frame, text="Adjustment Radius:").grid(row=1, column=0, padx=5, sticky="w")
+        self.congestion_radius_var = tk.IntVar(value=2)
+        radius_slider = ttk.Scale(
+            cong_control_frame, from_=1, to=5, orient=tk.HORIZONTAL,
+            variable=self.congestion_radius_var, command=self.update_congestion_radius
+        )
+        radius_slider.grid(row=1, column=1, sticky="ew", padx=5)
+        self.radius_label = ttk.Label(cong_control_frame, text="2")
+        self.radius_label.grid(row=1, column=2, padx=5)
+        
+        # Clear congestion button
+        ttk.Button(cong_control_frame, text="Clear All Congestion", 
+                  command=self.clear_all_congestion).grid(row=2, column=0, columnspan=3, pady=5)
+        
+        cong_control_frame.columnconfigure(1, weight=1)
         
         # Status panel
         status_frame = ttk.LabelFrame(main_frame, text="Simulation Status", padding="10")
@@ -222,7 +318,7 @@ class SimulationController:
         else:
             self.update_status(f"set step limit to : {self.max_steps}")
             
-        # 如果限制步數，啟用滑塊；否則禁用滑塊
+        # Enable slider if limited steps, otherwise disable slider
         for widget in self.root.winfo_children():
             if isinstance(widget, ttk.Scale) and widget.winfo_name() == "max_steps_slider":
                 widget.configure(state="disabled" if unlimited else "normal")
@@ -382,6 +478,10 @@ class SimulationController:
             if self.obstacle_mode:
                 self.toggle_obstacle_mode()  # Turn off obstacle mode
                 
+            # If we're in congestion mode, exit congestion mode when resuming
+            if self.congestion_mode:
+                self.toggle_congestion_mode()  # Turn off congestion mode
+                
             self.pause_btn.config(text="Pause")
             self.update_status("Simulation resumed")
             
@@ -450,7 +550,7 @@ class SimulationController:
         # Get number of vehicles
         num_vehicles = self.num_vehicles_var.get()
         
-        # 重置車輛ID計數器
+        # Reset vehicle ID counter
         from vehicle import Vehicle
         Vehicle.next_id = 1
         
@@ -463,7 +563,179 @@ class SimulationController:
         self.update_status(f"Created {num_vehicles} vehicles")
         self.completed_label.config(text=f"0/{num_vehicles}")
     
+    def update_congestion_level(self, val):
+        """Update congestion level from slider"""
+        self.congestion_level = float(val)
+        self.congestion_label.config(text=f"{self.congestion_level:.2f}")
+        
+    def update_congestion_radius(self, val):
+        """Update congestion adjustment radius from slider"""
+        radius = int(float(val))
+        self.radius_label.config(text=str(radius))
+        
+    def clear_all_congestion(self):
+        """Clear all congestion from the grid"""
+        if not self.urban_grid:
+            self.update_status("No grid available")
+            return
+            
+        self.urban_grid.congestion = np.zeros((self.urban_grid.size, self.urban_grid.size))
+        self.update_status("Cleared all area congestion")
+        
+        # Update visualization
+        if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
+            self.urban_grid.visualize(self.vehicles, show_plot=True)
+
+    def toggle_congestion_mode(self):
+        """Toggle the congestion adjustment mode"""
+        if not self.urban_grid:
+            self.update_status("No grid available")
+            return
+            
+        # Can only toggle congestion mode when paused or not running
+        if self.running and not self.paused:
+            self.update_status("必須先暫停才能進入Congestion Mode")
+            return
+            
+        # If in obstacle mode, exit it first
+        if self.obstacle_mode:
+            self.toggle_obstacle_mode()
+            
+        # Toggle congestion mode
+        self.congestion_mode = not self.congestion_mode
+        
+        # Update button text and appearance
+        if self.congestion_mode:
+            self.congestion_mode_btn.config(text="退出Congestion Mode", style="Accent.TButton")
+            self.update_status("Congestion Mode已開啟：點擊地圖調整區域Congestion Level")
+            
+            # Set up the canvas click handler in visualizer
+            if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
+                self.urban_grid.visualizer.canvas.bind("<Button-1>", self.on_congestion_click)
+                
+                # Update visualization to show it's in congestion mode
+                self.urban_grid.visualizer.update_display(self.urban_grid, self.vehicles, congestion_mode=True)
+        else:
+            self.congestion_mode_btn.config(text="Congestion Mode", style="TButton")
+            self.update_status("退出Congestion Mode")
+            
+            # Remove the canvas click handler
+            if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
+                self.urban_grid.visualizer.canvas.unbind("<Button-1>")
+                
+                # Update visualization to normal mode
+                self.urban_grid.visualizer.update_display(self.urban_grid, self.vehicles)
+    
+    def on_congestion_click(self, event):
+        """Handle canvas clicks to adjust congestion"""
+        if not self.congestion_mode or not self.urban_grid or not hasattr(self.urban_grid, 'visualizer'):
+            return
+            
+        # Convert click coordinates to grid coordinates
+        canvas = self.urban_grid.visualizer.canvas
+        cell_size = self.urban_grid.visualizer.cell_size
+        margin = self.urban_grid.visualizer.margin
+        
+        # Calculate grid coordinates
+        x_pos = int((event.x - margin) / cell_size)
+        y_pos = int(self.urban_grid.size - 1 - ((event.y - margin) / cell_size))
+        
+        # Ensure coordinates are within grid bounds
+        if 0 <= x_pos < self.urban_grid.size and 0 <= y_pos < self.urban_grid.size:
+            # Apply congestion to the area around the clicked position
+            radius = self.congestion_radius_var.get()
+            congestion_level = self.congestion_level
+            
+            for dx in range(-radius, radius + 1):
+                for dy in range(-radius, radius + 1):
+                    new_x = x_pos + dx
+                    new_y = y_pos + dy
+                    
+                    # Check bounds
+                    if 0 <= new_x < self.urban_grid.size and 0 <= new_y < self.urban_grid.size:
+                        # Calculate distance from center for smooth falloff
+                        distance = np.sqrt(dx*dx + dy*dy)
+                        if distance <= radius:
+                            # Apply smooth falloff
+                            falloff = max(0, 1 - distance / radius)
+                            self.urban_grid.congestion[new_x, new_y] = congestion_level * falloff
+            
+            self.update_status(f"Added obstacle at position ({x_pos}, {y_pos}) 周圍設置Congestion Level {congestion_level:.2f}")
+            
+            # Update visualization
+            self.urban_grid.visualize(self.vehicles, show_plot=True, congestion_mode=True)
+
     def toggle_obstacle_mode(self):
+        """Toggle the obstacle placement mode"""
+        if not self.urban_grid:
+            self.update_status("No grid available")
+            return
+            
+        # Can only toggle obstacle mode when paused or not running
+        if self.running and not self.paused:
+            self.update_status("必須先暫停才能進入Obstacle Mode")
+            return
+            
+        # If in congestion mode, exit it first
+        if self.congestion_mode:
+            self.toggle_congestion_mode()
+            
+        # Toggle obstacle mode
+        self.obstacle_mode = not self.obstacle_mode
+        
+        # Update button text and appearance
+        if self.obstacle_mode:
+            self.obstacle_mode_btn.config(text="退出Obstacle Mode", style="Accent.TButton")
+            self.update_status("Obstacle Mode已開啟：點擊地圖添加或移除障礙物")
+            
+            # Set up the canvas click handler in visualizer
+            if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
+                self.urban_grid.visualizer.canvas.bind("<Button-1>", self.on_canvas_click)
+                
+                # Update visualization to show it's in obstacle mode
+                self.urban_grid.visualizer.update_display(self.urban_grid, self.vehicles, obstacle_mode=True)
+        else:
+            self.obstacle_mode_btn.config(text="Obstacle Mode", style="TButton")
+            self.update_status("退出Obstacle Mode")
+            
+            # Remove the canvas click handler
+            if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
+                self.urban_grid.visualizer.canvas.unbind("<Button-1>")
+                
+                # Update visualization to normal mode
+                self.urban_grid.visualizer.update_display(self.urban_grid, self.vehicles)
+    
+    def on_canvas_click(self, event):
+        """Handle canvas clicks to add/remove obstacles"""
+        if not self.obstacle_mode or not self.urban_grid or not hasattr(self.urban_grid, 'visualizer'):
+            return
+            
+        # Convert click coordinates to grid coordinates
+        canvas = self.urban_grid.visualizer.canvas
+        cell_size = self.urban_grid.visualizer.cell_size
+        margin = self.urban_grid.visualizer.margin
+        
+        # Calculate grid coordinates
+        x_pos = int((event.x - margin) / cell_size)
+        y_pos = int(self.urban_grid.size - 1 - ((event.y - margin) / cell_size))
+        
+        # Ensure coordinates are within grid bounds
+        if 0 <= x_pos < self.urban_grid.size and 0 <= y_pos < self.urban_grid.size:
+            # Toggle obstacle at this position
+            if self.urban_grid.obstacles[x_pos, y_pos]:
+                self.urban_grid.remove_obstacle(x_pos, y_pos)
+                self.update_status(f"Removed obstacle at position ({x_pos}, {y_pos}) ")
+            else:
+                self.urban_grid.add_obstacle(x_pos, y_pos)
+                self.update_status(f"Added obstacle at position ({x_pos}, {y_pos}) ")
+            
+            # Update vehicles' optimal paths if needed
+            for vehicle in self.vehicles:
+                if not vehicle.reached:
+                    vehicle.update_optimal_path()
+            
+            # Update visualization
+            self.urban_grid.visualize(self.vehicles, show_plot=True)
         """Toggle the obstacle placement mode"""
         if not self.urban_grid:
             self.update_status("No grid available")

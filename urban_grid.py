@@ -43,10 +43,10 @@ class UrbanGrid:
         self.obstacles[x, y] = False
         
     def init_traffic_lights(self):
-        """Initialize traffic lights at major intersections"""
-        # Place traffic lights at every 3rd intersection in a grid pattern
-        for i in range(2, self.size, 3):
-            for j in range(2, self.size, 3):
+        """Initialize traffic lights at all intersections"""
+        # Place traffic lights at every second position to create proper intersections
+        for i in range(1, self.size, 2):  # Start at 1, increment by 2
+            for j in range(1, self.size, 2):  # Start at 1, increment by 2
                 # Alternate initial states for visual pattern
                 state = 1 if (i + j) % 2 == 0 else 2
                 self.traffic_lights[i, j] = state
@@ -71,13 +71,14 @@ class UrbanGrid:
         
         return np.mean(self.congestion[x_min:x_max+1, y_min:y_max+1])
 
-    def visualize(self, vehicles=None, show_plot=True, obstacle_mode=False):
+    def visualize(self, vehicles=None, show_plot=True, obstacle_mode=False, congestion_mode=False):
         """Visualize the grid with congestion and vehicles using Tkinter
         
         Args:
             vehicles: List of vehicles to visualize
             show_plot: Whether to display the visualization (set to False to suppress display)
             obstacle_mode: Whether in obstacle placement mode (changes appearance)
+            congestion_mode: Whether in congestion adjustment mode (changes appearance)
         """
         if not show_plot:
             return
@@ -93,4 +94,4 @@ class UrbanGrid:
         self.current_step = getattr(self, 'current_step', 0) + 1
             
         # Update the display
-        self.visualizer.update_display(self, vehicles=vehicles, obstacle_mode=obstacle_mode)
+        self.visualizer.update_display(self, vehicles=vehicles, obstacle_mode=obstacle_mode, congestion_mode=congestion_mode)

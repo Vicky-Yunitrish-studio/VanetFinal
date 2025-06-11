@@ -66,13 +66,14 @@ class TkinterVisualizer:
         shade = int(100 + random.random() * 100)  # Shade of gray (100-200)
         return f'#{shade:02x}{shade:02x}{shade:02x}'
     
-    def update_display(self, grid, vehicles=None, obstacle_mode=False):
+    def update_display(self, grid, vehicles=None, obstacle_mode=False, congestion_mode=False):
         """Update the display with current grid state
         
         Args:
             grid: The urban grid to display
             vehicles: Optional list of vehicles to display (if None, uses grid.vehicles)
             obstacle_mode: Whether in obstacle placement mode (changes appearance)
+            congestion_mode: Whether in congestion adjustment mode (changes appearance)
         """
         if self.is_closed:
             return
@@ -90,13 +91,14 @@ class TkinterVisualizer:
                 x = i * self.cell_size + self.margin
                 y = (grid.size - 1 - j) * self.cell_size + self.margin  # Invert y for proper orientation
                 
-                # Draw grid indicators when in obstacle mode
-                if obstacle_mode:
+                # Draw grid indicators when in obstacle mode or congestion mode
+                if obstacle_mode or congestion_mode:
                     # Draw light grid borders
+                    grid_color = 'gray70' if obstacle_mode else 'lightblue'
                     self.canvas.create_rectangle(
                         x - self.cell_size/2, y - self.cell_size/2,
                         x + self.cell_size/2, y + self.cell_size/2,
-                        outline='gray70', dash=(4, 4), width=1, fill=''
+                        outline=grid_color, dash=(4, 4), width=1, fill=''
                     )
                 
                 # Draw building block (in each grid corner)
@@ -157,6 +159,15 @@ class TkinterVisualizer:
                         x + self.cell_size/2 - 2, y + road_width - 2,
                         fill=congestion_color, outline='', stipple='gray50'
                     )
+                    
+                    # Show congestion values in congestion mode
+                    if congestion_mode and grid.congestion[i, j] > 0.05:
+                        self.canvas.create_text(
+                            x, y - road_width - 8,
+                            text=f"{grid.congestion[i, j]:.2f}",
+                            font=("Arial", 8),
+                            fill='red'
+                        )
                 
                 # Vertical road
                 # Base layer
@@ -379,8 +390,11 @@ class TkinterVisualizer:
         # Update info
         status_text = f"Step: {getattr(grid, 'current_step', 0)}"
         if obstacle_mode:
-            status_text += " | 障礙物放置模式：點擊放置或移除障礙物"
+            status_text += " | Obstacle Mode: Click to add/remove obstacles"
             self.status_label.config(text=status_text, foreground="red", font=("Arial", 10, "bold"))
+        elif congestion_mode:
+            status_text += " | Congestion Mode: Click to adjust area congestion"
+            self.status_label.config(text=status_text, foreground="blue", font=("Arial", 10, "bold"))
         else:
             self.status_label.config(text=status_text, foreground="black", font=("Arial", 10))
         

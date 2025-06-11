@@ -17,7 +17,7 @@ def run_simulation(episodes=1000, visualize_interval=100, max_steps=200, show_pl
     """
     if agent is None:
         # Create new agent
-        urban_grid = UrbanGrid(size=20)  # 將地圖大小從10改為20
+        urban_grid = UrbanGrid(size=20)  # Changed map size from 10 to 20
         agent = QLearningAgent(urban_grid)
     else:
         # Use existing agent's urban_grid
@@ -29,7 +29,7 @@ def run_simulation(episodes=1000, visualize_interval=100, max_steps=200, show_pl
     success_rate = []
     
     for episode in range(episodes):
-        # 重置車輛ID計數器
+        # Reset vehicle ID counter
         Vehicle.next_id = 1
         
         # Reset environment
@@ -53,7 +53,7 @@ def run_simulation(episodes=1000, visualize_interval=100, max_steps=200, show_pl
         step = 0
         all_reached = False
         
-        # 判斷是否使用無限步數模式 (max_steps=0 表示無限步數)
+        # Determine if unlimited steps mode is used (max_steps=0 means unlimited steps)
         unlimited_steps = (max_steps == 0)
         
         while not all_reached and (unlimited_steps or step < max_steps):
@@ -127,7 +127,7 @@ def test_incident_response(agent, num_tests=5, visualize=True, show_plot=True, m
         max_steps: Maximum steps per test
         unlimited_steps: If True, ignore max_steps and run until vehicle reaches destination
     """
-    # 重置車輛ID計數器
+    # Reset vehicle ID counter
     Vehicle.next_id = 1
     
     urban_grid = agent.urban_grid
