@@ -4,22 +4,28 @@ import random
 from matplotlib.colors import LinearSegmentedColormap
 
 class TkinterVisualizer:
-    def __init__(self, grid_size=20, cell_size=35):  # Adjusted for 20x20 grid
+    def __init__(self, grid_size=20, cell_size=30):  # Optimized cell size for better fit
         self.grid_size = grid_size
         self.cell_size = cell_size
         
-        # Increase margins to prevent roads from being cut off at edges
-        self.margin = self.cell_size  # Use full cell size as margin
+        # Optimized margins for complete map display
+        self.margin = 10  # Smaller margin for better space utilization
         self.window_width = grid_size * cell_size + 2 * self.margin
-        self.window_height = grid_size * cell_size + 2 * self.margin + 50  # Extra space for info panel
+        self.window_height = grid_size * cell_size + 2 * self.margin + 60  # Extra space for info panel
         
-        # Create main window
+        # Create main window with better sizing
         self.root = tk.Tk()
         self.root.title("Urban Grid Q-Learning Simulation")
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         
-        # Create main frame with padding
-        main_frame = tk.Frame(self.root, padx=20, pady=20)
+        # Set window size and make it resizable
+        total_width = self.window_width + 40  # Add padding
+        total_height = self.window_height + 40  # Add padding
+        self.root.geometry(f"{total_width}x{total_height}")
+        self.root.resizable(True, True)  # Allow resizing
+        
+        # Create main frame with minimal padding
+        main_frame = tk.Frame(self.root, padx=5, pady=5)
         main_frame.pack(expand=True, fill=tk.BOTH)
         
         # Create canvas for drawing with a border
@@ -118,26 +124,28 @@ class TkinterVisualizer:
                 road_width = self.cell_size/6  # Increased road width for better visibility
                 congestion_color = self._get_congestion_color(grid.congestion[i, j])
                 
-                # Draw optimal paths for vehicles if available
-                for vehicle in grid.vehicles:
-                    if not vehicle.reached:
-                        optimal_path = vehicle.get_remaining_optimal_path()
-                        if optimal_path and len(optimal_path) > 1:
-                            # Convert path coordinates to canvas coordinates
-                            path_coords = []
-                            for px, py in optimal_path:
-                                cx = px * self.cell_size + self.margin + self.cell_size/2
-                                cy = (grid.size - 1 - py) * self.cell_size + self.margin + self.cell_size/2
-                                path_coords.extend([cx, cy])
-                            
-                            # Draw dotted line for optimal path
-                            if path_coords:
-                                self.canvas.create_line(
-                                    path_coords,
-                                    fill='blue',
-                                    width=2,
-                                    dash=(4, 4)  # Create dotted line
-                                )
+                # Draw optimal paths for vehicles if available (light blue dotted line offset to the right)
+                if i == 0 and j == 0:  # Only draw paths once per frame, not for each grid cell
+                    for vehicle in grid.vehicles:
+                        if not vehicle.reached:
+                            optimal_path = vehicle.get_remaining_optimal_path()
+                            if optimal_path and len(optimal_path) > 1:
+                                # Convert path coordinates to canvas coordinates with offset
+                                path_coords = []
+                                for px, py in optimal_path:
+                                    # Offset the optimal path significantly to the right to avoid overlap
+                                    cx = px * self.cell_size + self.margin + 8
+                                    cy = (grid.size - 1 - py) * self.cell_size + self.margin
+                                    path_coords.extend([cx, cy])
+                                
+                                # Draw dotted line for optimal path (light blue, thinner)
+                                if len(path_coords) >= 4:  # Need at least 2 points
+                                    self.canvas.create_line(
+                                        path_coords,
+                                        fill='#87CEEB',  # Sky blue color for better distinction
+                                        width=2,
+                                        dash=(3, 6)  # Different dash pattern for distinction
+                                    )
                 
                 # Horizontal road
                 # Base layer
@@ -302,21 +310,22 @@ class TkinterVisualizer:
                 vx = v.position[0] * self.cell_size + self.margin
                 vy = (grid.size - 1 - v.position[1]) * self.cell_size + self.margin
                 
-                # Draw optimal path if available
-                if hasattr(v, 'optimal_path') and v.optimal_path:
-                    for i in range(len(v.optimal_path) - 1):
-                        p1 = v.optimal_path[i]
-                        p2 = v.optimal_path[i + 1]
-                        x1 = p1[0] * self.cell_size + self.margin
+                # Draw actual path taken (green dotted line with larger offset to the left)
+                if hasattr(v, 'path') and len(v.path) > 1:
+                    for i in range(len(v.path) - 1):
+                        p1 = v.path[i]
+                        p2 = v.path[i + 1]
+                        # Offset the actual path significantly to the left to avoid overlap
+                        x1 = p1[0] * self.cell_size + self.margin - 8
                         y1 = (grid.size - 1 - p1[1]) * self.cell_size + self.margin
-                        x2 = p2[0] * self.cell_size + self.margin
+                        x2 = p2[0] * self.cell_size + self.margin - 8
                         y2 = (grid.size - 1 - p2[1]) * self.cell_size + self.margin
-                        # Draw path segments with dotted line
+                        # Draw path segments with dotted line (green, different dash pattern)
                         self.canvas.create_line(
                             x1, y1, x2, y2,
-                            fill='#4CAF50',  # Light green color
+                            fill='#4CAF50',  # Medium green color
                             width=2,
-                            dash=(5, 3)  # Dotted line pattern
+                            dash=(6, 3)  # Different dash pattern from optimal path
                         )
                 
                 # Car shadow (for depth effect)
