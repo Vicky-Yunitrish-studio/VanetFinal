@@ -602,7 +602,7 @@ class SimulationController:
             
         # Can only toggle congestion mode when paused or not running
         if self.running and not self.paused:
-            self.update_status("必須先暫停才能進入Congestion Mode")
+            self.update_status("Must pause before entering Congestion Mode")
             return
             
         # If in obstacle mode, exit it first
@@ -614,8 +614,8 @@ class SimulationController:
         
         # Update button text and appearance
         if self.congestion_mode:
-            self.congestion_mode_btn.config(text="退出Congestion Mode", style="Accent.TButton")
-            self.update_status("Congestion Mode已開啟：點擊地圖調整區域Congestion Level")
+            self.congestion_mode_btn.config(text="Exit Congestion Mode", style="Accent.TButton")
+            self.update_status("Congestion Mode enabled: Click on map to adjust regional congestion level")
             
             # Set up the canvas click handler in visualizer
             if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
@@ -625,7 +625,7 @@ class SimulationController:
                 self.urban_grid.visualizer.update_display(self.urban_grid, self.vehicles, congestion_mode=True)
         else:
             self.congestion_mode_btn.config(text="Congestion Mode", style="TButton")
-            self.update_status("退出Congestion Mode")
+            self.update_status("Exited Congestion Mode")
             
             # Remove the canvas click handler
             if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
@@ -668,7 +668,7 @@ class SimulationController:
                             falloff = max(0, 1 - distance / radius)
                             self.urban_grid.congestion[new_x, new_y] = congestion_level * falloff
             
-            self.update_status(f"Added obstacle at position ({x_pos}, {y_pos}) 周圍設置Congestion Level {congestion_level:.2f}")
+            self.update_status(f"Added obstacle at position ({x_pos}, {y_pos}) with surrounding congestion level {congestion_level:.2f}")
             
             # Update visualization
             self.urban_grid.visualize(self.vehicles, show_plot=True, congestion_mode=True)
@@ -681,7 +681,7 @@ class SimulationController:
             
         # Can only toggle obstacle mode when paused or not running
         if self.running and not self.paused:
-            self.update_status("必須先暫停才能進入Obstacle Mode")
+            self.update_status("Must pause before entering Obstacle Mode")
             return
             
         # If in congestion mode, exit it first
@@ -693,8 +693,8 @@ class SimulationController:
         
         # Update button text and appearance
         if self.obstacle_mode:
-            self.obstacle_mode_btn.config(text="退出Obstacle Mode", style="Accent.TButton")
-            self.update_status("Obstacle Mode已開啟：點擊地圖添加或移除障礙物")
+            self.obstacle_mode_btn.config(text="Exit Obstacle Mode", style="Accent.TButton")
+            self.update_status("Obstacle Mode enabled: Click on map to add or remove obstacles")
             
             # Set up the canvas click handler in visualizer
             if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
@@ -704,7 +704,7 @@ class SimulationController:
                 self.urban_grid.visualizer.update_display(self.urban_grid, self.vehicles, obstacle_mode=True)
         else:
             self.obstacle_mode_btn.config(text="Obstacle Mode", style="TButton")
-            self.update_status("退出Obstacle Mode")
+            self.update_status("Exited Obstacle Mode")
             
             # Remove the canvas click handler
             if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
@@ -963,31 +963,31 @@ class SimulationController:
         # Step penalty
         ttk.Label(scrollable_frame, text="Step Penalty:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
         ttk.Entry(scrollable_frame, textvariable=self.step_penalty_var, width=10).grid(row=row, column=1, padx=5, pady=2)
-        ttk.Label(scrollable_frame, text="每步移動的成本").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="Cost per movement step").grid(row=row, column=2, sticky="w", padx=5, pady=2)
         row += 1
         
         # Destination reward
         ttk.Label(scrollable_frame, text="Destination Reward:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
         ttk.Entry(scrollable_frame, textvariable=self.destination_reward_var, width=10).grid(row=row, column=1, padx=5, pady=2)
-        ttk.Label(scrollable_frame, text="到達目的地的獎勵").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="Reward for reaching destination").grid(row=row, column=2, sticky="w", padx=5, pady=2)
         row += 1
         
         # A* follow reward
         ttk.Label(scrollable_frame, text="A* Follow Reward:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
         ttk.Entry(scrollable_frame, textvariable=self.astar_follow_var, width=10).grid(row=row, column=1, padx=5, pady=2)
-        ttk.Label(scrollable_frame, text="完全跟隨A*路徑的獎勵").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="Reward for following A* path exactly").grid(row=row, column=2, sticky="w", padx=5, pady=2)
         row += 1
         
         # A* on path reward
         ttk.Label(scrollable_frame, text="A* On Path Reward:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
         ttk.Entry(scrollable_frame, textvariable=self.astar_path_var, width=10).grid(row=row, column=1, padx=5, pady=2)
-        ttk.Label(scrollable_frame, text="在最佳路徑上的獎勵").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="Reward for being on optimal path").grid(row=row, column=2, sticky="w", padx=5, pady=2)
         row += 1
         
         # Distance reward
         ttk.Label(scrollable_frame, text="Distance Reward:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
         ttk.Entry(scrollable_frame, textvariable=self.distance_reward_var, width=10).grid(row=row, column=1, padx=5, pady=2)
-        ttk.Label(scrollable_frame, text="靠近目的地的獎勵").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="Reward for getting closer to destination").grid(row=row, column=2, sticky="w", padx=5, pady=2)
         row += 1
         
         canvas.pack(side="left", fill="both", expand=True)
@@ -1020,29 +1020,29 @@ class SimulationController:
         # Congestion settings
         ttk.Label(scrollable_frame, text="Congestion Threshold:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
         ttk.Entry(scrollable_frame, textvariable=self.congestion_threshold_var, width=10).grid(row=row, column=1, padx=5, pady=2)
-        ttk.Label(scrollable_frame, text="高壅塞閾值 (0.0-1.0)").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="High congestion threshold (0.0-1.0)").grid(row=row, column=2, sticky="w", padx=5, pady=2)
         row += 1
         
         ttk.Label(scrollable_frame, text="Congestion Penalty Multiplier:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
         ttk.Entry(scrollable_frame, textvariable=self.congestion_penalty_var, width=10).grid(row=row, column=1, padx=5, pady=2)
-        ttk.Label(scrollable_frame, text="壅塞懲罰倍數").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="Congestion penalty multiplier").grid(row=row, column=2, sticky="w", padx=5, pady=2)
         row += 1
         
         # Backward movement penalties
         ttk.Label(scrollable_frame, text="Backtrack Penalty:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
         ttk.Entry(scrollable_frame, textvariable=self.backtrack_penalty_var, width=10).grid(row=row, column=1, padx=5, pady=2)
-        ttk.Label(scrollable_frame, text="立即後退懲罰").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="Immediate backtracking penalty").grid(row=row, column=2, sticky="w", padx=5, pady=2)
         row += 1
         
         ttk.Label(scrollable_frame, text="Oscillation Penalty:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
         ttk.Entry(scrollable_frame, textvariable=self.oscillation_penalty_var, width=10).grid(row=row, column=1, padx=5, pady=2)
-        ttk.Label(scrollable_frame, text="振盪行為懲罰").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="Oscillating behavior penalty").grid(row=row, column=2, sticky="w", padx=5, pady=2)
         row += 1
         
         # Traffic light penalty
         ttk.Label(scrollable_frame, text="Red Light Penalty:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
         ttk.Entry(scrollable_frame, textvariable=self.red_light_penalty_var, width=10).grid(row=row, column=1, padx=5, pady=2)
-        ttk.Label(scrollable_frame, text="紅燈等待懲罰").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="Red light waiting penalty").grid(row=row, column=2, sticky="w", padx=5, pady=2)
         row += 1
         
         canvas.pack(side="left", fill="both", expand=True)
@@ -1074,23 +1074,23 @@ class SimulationController:
         # Loop detection settings
         ttk.Label(scrollable_frame, text="Loop Threshold Base:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
         ttk.Entry(scrollable_frame, textvariable=self.loop_threshold_base_var, width=10).grid(row=row, column=1, padx=5, pady=2)
-        ttk.Label(scrollable_frame, text="迴圈檢測基礎閾值").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="Loop detection base threshold").grid(row=row, column=2, sticky="w", padx=5, pady=2)
         row += 1
         
         ttk.Label(scrollable_frame, text="Loop Penalty Base:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
         ttk.Entry(scrollable_frame, textvariable=self.loop_penalty_base_var, width=10).grid(row=row, column=1, padx=5, pady=2)
-        ttk.Label(scrollable_frame, text="迴圈基礎懲罰").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="Loop base penalty").grid(row=row, column=2, sticky="w", padx=5, pady=2)
         row += 1
         
         # Proximity reward settings
         ttk.Label(scrollable_frame, text="Proximity Base Multiplier:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
         ttk.Entry(scrollable_frame, textvariable=self.proximity_base_var, width=10).grid(row=row, column=1, padx=5, pady=2)
-        ttk.Label(scrollable_frame, text="基礎接近獎勵倍數").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="Base proximity reward multiplier").grid(row=row, column=2, sticky="w", padx=5, pady=2)
         row += 1
         
         ttk.Label(scrollable_frame, text="Proximity Max Multiplier:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
         ttk.Entry(scrollable_frame, textvariable=self.proximity_max_var, width=10).grid(row=row, column=1, padx=5, pady=2)
-        ttk.Label(scrollable_frame, text="最大接近獎勵倍數").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="Maximum proximity reward multiplier").grid(row=row, column=2, sticky="w", padx=5, pady=2)
         row += 1
         
         canvas.pack(side="left", fill="both", expand=True)
@@ -1121,10 +1121,10 @@ class SimulationController:
                 proximity_max_multiplier=float(self.proximity_max_var.get())
             )
             
-            self.update_status("獎勵配置已更新")
+            self.update_status("Reward configuration updated")
             
         except ValueError as e:
-            messagebox.showerror("輸入錯誤", f"請檢查輸入值: {str(e)}")
+            messagebox.showerror("Input Error", f"Please check input values: {str(e)}")
     
     def reset_reward_config(self):
         """Reset reward configuration to defaults"""
@@ -1148,16 +1148,16 @@ class SimulationController:
         self.proximity_base_var.set(str(self.reward_config.proximity_base_multiplier))
         self.proximity_max_var.set(str(self.reward_config.proximity_max_multiplier))
         
-        self.update_status("獎勵配置已重置為預設值")
+        self.update_status("Reward configuration reset to defaults")
     
     def load_reward_preset(self):
         """Load a reward preset configuration"""
         preset_window = tk.Toplevel(self.root)
-        preset_window.title("選擇獎勵預設")
+        preset_window.title("Select Reward Preset")
         preset_window.geometry("300x200")
         preset_window.resizable(False, False)
         
-        ttk.Label(preset_window, text="請選擇一個預設配置:").pack(pady=10)
+        ttk.Label(preset_window, text="Please select a preset configuration:").pack(pady=10)
         
         # Preset buttons
         def load_aggressive():
@@ -1169,7 +1169,7 @@ class SimulationController:
                 congestion_penalty_multiplier=15
             )
             self.update_reward_gui_from_config()
-            self.update_status("已載入積極型配置")
+            self.update_status("Loaded aggressive configuration")
             preset_window.destroy()
         
         def load_cautious():
@@ -1181,19 +1181,19 @@ class SimulationController:
                 congestion_penalty_multiplier=2
             )
             self.update_reward_gui_from_config()
-            self.update_status("已載入謹慎型配置")
+            self.update_status("Loaded cautious configuration")
             preset_window.destroy()
         
         def load_balanced():
             self.reward_config.reset_to_defaults()
             self.update_reward_gui_from_config()
-            self.update_status("已載入平衡型配置")
+            self.update_status("Loaded balanced configuration")
             preset_window.destroy()
         
-        ttk.Button(preset_window, text="積極型 (快速直接)", command=load_aggressive).pack(pady=5)
-        ttk.Button(preset_window, text="謹慎型 (探索性強)", command=load_cautious).pack(pady=5)
-        ttk.Button(preset_window, text="平衡型 (預設)", command=load_balanced).pack(pady=5)
-        ttk.Button(preset_window, text="取消", command=preset_window.destroy).pack(pady=5)
+        ttk.Button(preset_window, text="Aggressive (Fast & Direct)", command=load_aggressive).pack(pady=5)
+        ttk.Button(preset_window, text="Cautious (Exploratory)", command=load_cautious).pack(pady=5)
+        ttk.Button(preset_window, text="Balanced (Default)", command=load_balanced).pack(pady=5)
+        ttk.Button(preset_window, text="Cancel", command=preset_window.destroy).pack(pady=5)
     
     def update_reward_gui_from_config(self):
         """Update GUI values from current reward configuration"""
