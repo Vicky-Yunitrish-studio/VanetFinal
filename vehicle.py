@@ -1,13 +1,17 @@
 import random
 from astar import astar, manhattan_distance
+from reward_config import RewardConfig
 
 class Vehicle:
     # Class variable to track vehicle IDs
     next_id = 1
     
-    def __init__(self, urban_grid, agent, position=None, destination=None):
+    def __init__(self, urban_grid, agent, position=None, destination=None, reward_config=None):
         self.urban_grid = urban_grid
         self.agent = agent
+        
+        # Initialize reward configuration
+        self.reward_config = reward_config if reward_config is not None else RewardConfig()
         
         # Assign vehicle ID
         self.id = Vehicle.next_id
@@ -85,39 +89,42 @@ class Vehicle:
         new_position = (self.position[0] + dx, self.position[1] + dy)
         
         # Calculate base reward
-        reward = -1  # Step penalty
+        reward = self.reward_config.get_step_penalty()  # Step penalty
         
         # A* path following reward
+        astar_rewards = self.reward_config.get_astar_rewards()
         if self.optimal_path and len(self.optimal_path) > 1:
             next_optimal = self.optimal_path[1]  # Next position in optimal path
             if new_position == next_optimal:
-                reward += 10  # Strong reward for following A* path
+                reward += astar_rewards['follow']  # Strong reward for following A* path
             elif new_position in self.optimal_path:
-                reward += 5  # Moderate reward for being on optimal path
+                reward += astar_rewards['on_path']  # Moderate reward for being on optimal path
         
         # Distance-based reward component
         current_dist = manhattan_distance(self.position, self.destination)
         new_dist = manhattan_distance(new_position, self.destination)
         if new_dist < current_dist:
-            reward += 3  # Reward for getting closer to destination
+            reward += self.reward_config.get_distance_reward()  # Reward for getting closer to destination
         
         # Congestion penalties
+        congestion_config = self.reward_config.get_congestion_config()
         congestion_at_new_pos = self.urban_grid.congestion[new_position]
-        if congestion_at_new_pos > 0.5:  # High congestion threshold
-            reward -= 5 * congestion_at_new_pos  # Penalty proportional to congestion
+        if congestion_at_new_pos > congestion_config['threshold']:  # High congestion threshold
+            reward -= congestion_config['penalty_multiplier'] * congestion_at_new_pos  # Penalty proportional to congestion
         
         # Enhanced backward movement prevention
+        backward_penalties = self.reward_config.get_backward_movement_penalties()
         if len(self.path) > 1:
             # Check for immediate backtracking
             if new_position == self.path[-2]:
-                reward -= 30  # Doubled penalty for immediate backtracking
+                reward += backward_penalties['immediate_backtrack']  # Penalty for immediate backtracking
                 
             # Check for oscillating behavior (moving back and forth)
             if len(self.path) > 3:
                 if new_position == self.path[-3]:  # Moving back to position from 2 steps ago
-                    reward -= 40  # Even stronger penalty for oscillation
+                    reward += backward_penalties['oscillation']  # Penalty for oscillation
                 if len(self.path) > 5 and new_position == self.path[-5]:  # Check longer oscillation patterns
-                    reward -= 50  # Severe penalty for longer oscillation patterns
+                    reward += backward_penalties['long_oscillation']  # Penalty for longer oscillation patterns
         
         # Handle traffic lights
         x, y = new_position
@@ -130,12 +137,12 @@ class Vehicle:
                (dx != 0 and self.urban_grid.traffic_lights[x, y] == 1):
                 # Stop and wait for the light to change
                 can_move = False
-                reward -= 5  # Small waiting penalty (less than running the red light)
+                reward += self.reward_config.get_traffic_light_penalty()  # Waiting penalty
                 
         if can_move:
             # Check if destination reached
             if new_position == self.destination:
-                reward += 100  # Destination reward
+                reward += self.reward_config.get_destination_reward()  # Destination reward
                 self.reached = True
             
             # Update position and path
@@ -147,17 +154,19 @@ class Vehicle:
         self.steps += 1
         
         # Detect loops
+        loop_config = self.reward_config.get_loop_config()
         if self.position in self.position_history:
             self.position_history[self.position] += 1
             
             # Calculate threshold: adjust loop threshold based on map size, smaller maps use smaller threshold
-            loop_threshold = max(3, min(5, self.urban_grid.size // 5))
+            loop_threshold = max(loop_config['threshold_base'], 
+                               min(loop_config['threshold_max'], self.urban_grid.size // 5))
             
             # If we've visited the same position more than threshold times and haven't applied a loop penalty
             if self.position_history[self.position] > loop_threshold and not self.position in self.loop_penalty_applied:
                 # Apply loop penalty
-                loop_penalty = -20 * (self.position_history[self.position] - loop_threshold)  # More loops = bigger penalty
-                loop_penalty = max(-100, loop_penalty)  # Limit maximum penalty
+                loop_penalty = loop_config['penalty_base'] * (self.position_history[self.position] - loop_threshold)
+                loop_penalty = max(loop_config['penalty_max'], loop_penalty)  # Limit maximum penalty
                 reward += loop_penalty
                 self.loop_penalty_applied[self.position] = True
                 
@@ -178,13 +187,15 @@ class Vehicle:
         
         # Scale proximity reward based on distance to destination
         # The closer to destination, the higher the reward multiplier
+        proximity_config = self.reward_config.get_proximity_config()
         max_possible_dist = self.urban_grid.size * 2  # Maximum possible Manhattan distance
         progress = 1 - (new_dist / max_possible_dist)  # 0 when furthest, 1 when at destination
-        proximity_multiplier = 5 + (15 * progress)  # Scales from 5 to 20 based on progress
+        proximity_multiplier = proximity_config['base_multiplier'] + (proximity_config['max_multiplier'] * progress)
         reward += proximity_reward * proximity_multiplier
         # --- End proximity reward ---
         
         # --- A* path following reward ---
+        path_config = self.reward_config.get_path_distance_config()
         if self.optimal_path:
             # Find the nearest point on optimal path
             min_dist_to_path = float('inf')
@@ -196,7 +207,7 @@ class Vehicle:
                     path_progress = i / len(self.optimal_path)
             
             # Reward for being close to optimal path
-            path_reward = max(0, 10 - min_dist_to_path * 2)  # Max 10 reward when on path
+            path_reward = max(0, path_config['base_reward'] - min_dist_to_path * path_config['penalty_multiplier'])
             # Scale reward based on progress along path
             path_reward *= (1 + path_progress)  # Higher reward for later parts of path
             reward += path_reward
