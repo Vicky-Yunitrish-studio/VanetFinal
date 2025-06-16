@@ -62,7 +62,9 @@ from tkinter import ttk, filedialog, messagebox
 from urban_grid import UrbanGrid
 from vehicle import Vehicle
 from agent import QLearningAgent
+from reward_config import RewardConfig
 import pickle
+import json
 
 class SimulationController:
     def __init__(self, trained_agent=None):
@@ -96,6 +98,9 @@ class SimulationController:
         # Congestion adjustment mode variables
         self.congestion_mode = False  # Flag for congestion adjustment mode
         self.congestion_level = 0.5  # Default congestion level (0.0 to 1.0)
+        
+        # Reward configuration
+        self.reward_config = RewardConfig()
         
         # Create GUI window
         self.setup_gui()
@@ -236,6 +241,9 @@ class SimulationController:
         ttk.Button(param_frame, text="Apply", command=self.apply_q_params).grid(row=1, column=2, padx=5, rowspan=1)
         
         param_frame.columnconfigure(0, weight=1)
+        
+        # Reward Configuration panel
+        self.setup_reward_config_gui(control_frame)
         
         # Congestion adjustment controls
         congestion_frame = ttk.LabelFrame(control_frame, text="Congestion Controls", padding="10")
@@ -557,7 +565,7 @@ class SimulationController:
         # Create vehicles
         self.vehicles = []
         for _ in range(num_vehicles):
-            vehicle = Vehicle(self.urban_grid, self.agent)
+            vehicle = Vehicle(self.urban_grid, self.agent, reward_config=self.reward_config)
             self.vehicles.append(vehicle)
         
         self.update_status(f"Created {num_vehicles} vehicles")
@@ -892,6 +900,328 @@ class SimulationController:
         self.root.mainloop()
 
 
+    def setup_reward_config_gui(self, parent_frame):
+        """Setup the reward configuration GUI section"""
+        reward_frame = ttk.LabelFrame(parent_frame, text="Reward Configuration", padding="10")
+        reward_frame.pack(fill=tk.X, pady=5)
+        
+        # Create notebook for tabbed interface
+        notebook = ttk.Notebook(reward_frame)
+        notebook.pack(fill=tk.BOTH, expand=True)
+        
+        # Basic Rewards Tab
+        basic_tab = ttk.Frame(notebook)
+        notebook.add(basic_tab, text="Basic Rewards")
+        self.setup_basic_rewards_tab(basic_tab)
+        
+        # Movement Penalties Tab
+        movement_tab = ttk.Frame(notebook)
+        notebook.add(movement_tab, text="Movement Penalties")
+        self.setup_movement_penalties_tab(movement_tab)
+        
+        # Advanced Rewards Tab
+        advanced_tab = ttk.Frame(notebook)
+        notebook.add(advanced_tab, text="Advanced Settings")
+        self.setup_advanced_rewards_tab(advanced_tab)
+        
+        # Control buttons
+        btn_frame = ttk.Frame(reward_frame)
+        btn_frame.pack(fill=tk.X, pady=5)
+        
+        ttk.Button(btn_frame, text="Apply Reward Config", 
+                  command=self.apply_reward_config).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Reset to Defaults", 
+                  command=self.reset_reward_config).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Load Preset", 
+                  command=self.load_reward_preset).pack(side=tk.LEFT, padx=5)
+    
+    def setup_basic_rewards_tab(self, parent):
+        """Setup basic rewards configuration tab"""
+        # Create scrollable frame
+        canvas = tk.Canvas(parent)
+        scrollbar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Initialize StringVars for reward values
+        self.step_penalty_var = tk.StringVar(value=str(self.reward_config.step_penalty))
+        self.destination_reward_var = tk.StringVar(value=str(self.reward_config.destination_reached_reward))
+        self.astar_follow_var = tk.StringVar(value=str(self.reward_config.astar_follow_reward))
+        self.astar_path_var = tk.StringVar(value=str(self.reward_config.astar_on_path_reward))
+        self.distance_reward_var = tk.StringVar(value=str(self.reward_config.closer_to_destination_reward))
+        
+        # Basic reward settings
+        row = 0
+        
+        # Step penalty
+        ttk.Label(scrollable_frame, text="Step Penalty:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.step_penalty_var, width=10).grid(row=row, column=1, padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="每步移動的成本").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        row += 1
+        
+        # Destination reward
+        ttk.Label(scrollable_frame, text="Destination Reward:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.destination_reward_var, width=10).grid(row=row, column=1, padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="到達目的地的獎勵").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        row += 1
+        
+        # A* follow reward
+        ttk.Label(scrollable_frame, text="A* Follow Reward:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.astar_follow_var, width=10).grid(row=row, column=1, padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="完全跟隨A*路徑的獎勵").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        row += 1
+        
+        # A* on path reward
+        ttk.Label(scrollable_frame, text="A* On Path Reward:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.astar_path_var, width=10).grid(row=row, column=1, padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="在最佳路徑上的獎勵").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        row += 1
+        
+        # Distance reward
+        ttk.Label(scrollable_frame, text="Distance Reward:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.distance_reward_var, width=10).grid(row=row, column=1, padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="靠近目的地的獎勵").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        row += 1
+        
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+    
+    def setup_movement_penalties_tab(self, parent):
+        """Setup movement penalties configuration tab"""
+        # Create scrollable frame
+        canvas = tk.Canvas(parent)
+        scrollbar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Initialize StringVars for penalty values
+        self.congestion_threshold_var = tk.StringVar(value=str(self.reward_config.high_congestion_threshold))
+        self.congestion_penalty_var = tk.StringVar(value=str(self.reward_config.congestion_penalty_multiplier))
+        self.backtrack_penalty_var = tk.StringVar(value=str(self.reward_config.immediate_backtrack_penalty))
+        self.oscillation_penalty_var = tk.StringVar(value=str(self.reward_config.oscillation_penalty))
+        self.red_light_penalty_var = tk.StringVar(value=str(self.reward_config.red_light_wait_penalty))
+        
+        row = 0
+        
+        # Congestion settings
+        ttk.Label(scrollable_frame, text="Congestion Threshold:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.congestion_threshold_var, width=10).grid(row=row, column=1, padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="高壅塞閾值 (0.0-1.0)").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        row += 1
+        
+        ttk.Label(scrollable_frame, text="Congestion Penalty Multiplier:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.congestion_penalty_var, width=10).grid(row=row, column=1, padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="壅塞懲罰倍數").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        row += 1
+        
+        # Backward movement penalties
+        ttk.Label(scrollable_frame, text="Backtrack Penalty:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.backtrack_penalty_var, width=10).grid(row=row, column=1, padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="立即後退懲罰").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        row += 1
+        
+        ttk.Label(scrollable_frame, text="Oscillation Penalty:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.oscillation_penalty_var, width=10).grid(row=row, column=1, padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="振盪行為懲罰").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        row += 1
+        
+        # Traffic light penalty
+        ttk.Label(scrollable_frame, text="Red Light Penalty:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.red_light_penalty_var, width=10).grid(row=row, column=1, padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="紅燈等待懲罰").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        row += 1
+        
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+    
+    def setup_advanced_rewards_tab(self, parent):
+        """Setup advanced rewards configuration tab"""
+        # Create scrollable frame
+        canvas = tk.Canvas(parent)
+        scrollbar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Initialize StringVars for advanced settings
+        self.loop_threshold_base_var = tk.StringVar(value=str(self.reward_config.loop_threshold_base))
+        self.loop_penalty_base_var = tk.StringVar(value=str(self.reward_config.loop_penalty_base))
+        self.proximity_base_var = tk.StringVar(value=str(self.reward_config.proximity_base_multiplier))
+        self.proximity_max_var = tk.StringVar(value=str(self.reward_config.proximity_max_multiplier))
+        
+        row = 0
+        
+        # Loop detection settings
+        ttk.Label(scrollable_frame, text="Loop Threshold Base:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.loop_threshold_base_var, width=10).grid(row=row, column=1, padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="迴圈檢測基礎閾值").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        row += 1
+        
+        ttk.Label(scrollable_frame, text="Loop Penalty Base:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.loop_penalty_base_var, width=10).grid(row=row, column=1, padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="迴圈基礎懲罰").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        row += 1
+        
+        # Proximity reward settings
+        ttk.Label(scrollable_frame, text="Proximity Base Multiplier:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.proximity_base_var, width=10).grid(row=row, column=1, padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="基礎接近獎勵倍數").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        row += 1
+        
+        ttk.Label(scrollable_frame, text="Proximity Max Multiplier:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.proximity_max_var, width=10).grid(row=row, column=1, padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="最大接近獎勵倍數").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        row += 1
+        
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+    
+    def apply_reward_config(self):
+        """Apply the reward configuration from GUI inputs"""
+        try:
+            # Update basic rewards
+            self.reward_config.update_config(
+                step_penalty=float(self.step_penalty_var.get()),
+                destination_reached_reward=float(self.destination_reward_var.get()),
+                astar_follow_reward=float(self.astar_follow_var.get()),
+                astar_on_path_reward=float(self.astar_path_var.get()),
+                closer_to_destination_reward=float(self.distance_reward_var.get()),
+                
+                # Movement penalties
+                high_congestion_threshold=float(self.congestion_threshold_var.get()),
+                congestion_penalty_multiplier=float(self.congestion_penalty_var.get()),
+                immediate_backtrack_penalty=float(self.backtrack_penalty_var.get()),
+                oscillation_penalty=float(self.oscillation_penalty_var.get()),
+                red_light_wait_penalty=float(self.red_light_penalty_var.get()),
+                
+                # Advanced settings
+                loop_threshold_base=int(float(self.loop_threshold_base_var.get())),
+                loop_penalty_base=float(self.loop_penalty_base_var.get()),
+                proximity_base_multiplier=float(self.proximity_base_var.get()),
+                proximity_max_multiplier=float(self.proximity_max_var.get())
+            )
+            
+            self.update_status("獎勵配置已更新")
+            
+        except ValueError as e:
+            messagebox.showerror("輸入錯誤", f"請檢查輸入值: {str(e)}")
+    
+    def reset_reward_config(self):
+        """Reset reward configuration to defaults"""
+        self.reward_config.reset_to_defaults()
+        
+        # Update GUI values
+        self.step_penalty_var.set(str(self.reward_config.step_penalty))
+        self.destination_reward_var.set(str(self.reward_config.destination_reached_reward))
+        self.astar_follow_var.set(str(self.reward_config.astar_follow_reward))
+        self.astar_path_var.set(str(self.reward_config.astar_on_path_reward))
+        self.distance_reward_var.set(str(self.reward_config.closer_to_destination_reward))
+        
+        self.congestion_threshold_var.set(str(self.reward_config.high_congestion_threshold))
+        self.congestion_penalty_var.set(str(self.reward_config.congestion_penalty_multiplier))
+        self.backtrack_penalty_var.set(str(self.reward_config.immediate_backtrack_penalty))
+        self.oscillation_penalty_var.set(str(self.reward_config.oscillation_penalty))
+        self.red_light_penalty_var.set(str(self.reward_config.red_light_wait_penalty))
+        
+        self.loop_threshold_base_var.set(str(self.reward_config.loop_threshold_base))
+        self.loop_penalty_base_var.set(str(self.reward_config.loop_penalty_base))
+        self.proximity_base_var.set(str(self.reward_config.proximity_base_multiplier))
+        self.proximity_max_var.set(str(self.reward_config.proximity_max_multiplier))
+        
+        self.update_status("獎勵配置已重置為預設值")
+    
+    def load_reward_preset(self):
+        """Load a reward preset configuration"""
+        preset_window = tk.Toplevel(self.root)
+        preset_window.title("選擇獎勵預設")
+        preset_window.geometry("300x200")
+        preset_window.resizable(False, False)
+        
+        ttk.Label(preset_window, text="請選擇一個預設配置:").pack(pady=10)
+        
+        # Preset buttons
+        def load_aggressive():
+            self.reward_config.update_config(
+                step_penalty=-3,
+                astar_follow_reward=20,
+                destination_reached_reward=300,
+                immediate_backtrack_penalty=-100,
+                congestion_penalty_multiplier=15
+            )
+            self.update_reward_gui_from_config()
+            self.update_status("已載入積極型配置")
+            preset_window.destroy()
+        
+        def load_cautious():
+            self.reward_config.update_config(
+                step_penalty=-0.5,
+                astar_follow_reward=5,
+                destination_reached_reward=50,
+                immediate_backtrack_penalty=-10,
+                congestion_penalty_multiplier=2
+            )
+            self.update_reward_gui_from_config()
+            self.update_status("已載入謹慎型配置")
+            preset_window.destroy()
+        
+        def load_balanced():
+            self.reward_config.reset_to_defaults()
+            self.update_reward_gui_from_config()
+            self.update_status("已載入平衡型配置")
+            preset_window.destroy()
+        
+        ttk.Button(preset_window, text="積極型 (快速直接)", command=load_aggressive).pack(pady=5)
+        ttk.Button(preset_window, text="謹慎型 (探索性強)", command=load_cautious).pack(pady=5)
+        ttk.Button(preset_window, text="平衡型 (預設)", command=load_balanced).pack(pady=5)
+        ttk.Button(preset_window, text="取消", command=preset_window.destroy).pack(pady=5)
+    
+    def update_reward_gui_from_config(self):
+        """Update GUI values from current reward configuration"""
+        if hasattr(self, 'step_penalty_var'):
+            self.step_penalty_var.set(str(self.reward_config.step_penalty))
+            self.destination_reward_var.set(str(self.reward_config.destination_reached_reward))
+            self.astar_follow_var.set(str(self.reward_config.astar_follow_reward))
+            self.astar_path_var.set(str(self.reward_config.astar_on_path_reward))
+            self.distance_reward_var.set(str(self.reward_config.closer_to_destination_reward))
+            
+            self.congestion_threshold_var.set(str(self.reward_config.high_congestion_threshold))
+            self.congestion_penalty_var.set(str(self.reward_config.congestion_penalty_multiplier))
+            self.backtrack_penalty_var.set(str(self.reward_config.immediate_backtrack_penalty))
+            self.oscillation_penalty_var.set(str(self.reward_config.oscillation_penalty))
+            self.red_light_penalty_var.set(str(self.reward_config.red_light_wait_penalty))
+            
+            self.loop_threshold_base_var.set(str(self.reward_config.loop_threshold_base))
+            self.loop_penalty_base_var.set(str(self.reward_config.loop_penalty_base))
+            self.proximity_base_var.set(str(self.reward_config.proximity_base_multiplier))
+            self.proximity_max_var.set(str(self.reward_config.proximity_max_multiplier))
+    
+    def close_event(self):
+        """Handle window close event"""
+        if hasattr(self.urban_grid, 'visualizer'):
+            self.urban_grid.visualizer.close()
+        
+        self.root.destroy()
+    
 def main():
     """Main function to launch the simulation controller"""
     # Try to load a recent trained agent from pickle file
