@@ -88,43 +88,8 @@ class Vehicle:
         dx, dy = self.agent.actions[action_idx]
         new_position = (self.position[0] + dx, self.position[1] + dy)
         
-        # Calculate base reward
-        reward = self.reward_config.get_step_penalty()  # Step penalty
-        
-        # A* path following reward
-        astar_rewards = self.reward_config.get_astar_rewards()
-        if self.optimal_path and len(self.optimal_path) > 1:
-            next_optimal = self.optimal_path[1]  # Next position in optimal path
-            if new_position == next_optimal:
-                reward += astar_rewards['follow']  # Strong reward for following A* path
-            elif new_position in self.optimal_path:
-                reward += astar_rewards['on_path']  # Moderate reward for being on optimal path
-        
-        # Distance-based reward component
-        current_dist = manhattan_distance(self.position, self.destination)
-        new_dist = manhattan_distance(new_position, self.destination)
-        if new_dist < current_dist:
-            reward += self.reward_config.get_distance_reward()  # Reward for getting closer to destination
-        
-        # Congestion penalties
-        congestion_config = self.reward_config.get_congestion_config()
-        congestion_at_new_pos = self.urban_grid.congestion[new_position]
-        if congestion_at_new_pos > congestion_config['threshold']:  # High congestion threshold
-            reward -= congestion_config['penalty_multiplier'] * congestion_at_new_pos  # Penalty proportional to congestion
-        
-        # Enhanced backward movement prevention
-        backward_penalties = self.reward_config.get_backward_movement_penalties()
-        if len(self.path) > 1:
-            # Check for immediate backtracking
-            if new_position == self.path[-2]:
-                reward += backward_penalties['immediate_backtrack']  # Penalty for immediate backtracking
-                
-            # Check for oscillating behavior (moving back and forth)
-            if len(self.path) > 3:
-                if new_position == self.path[-3]:  # Moving back to position from 2 steps ago
-                    reward += backward_penalties['oscillation']  # Penalty for oscillation
-                if len(self.path) > 5 and new_position == self.path[-5]:  # Check longer oscillation patterns
-                    reward += backward_penalties['long_oscillation']  # Penalty for longer oscillation patterns
+        # Calculate reward using the selected algorithm
+        reward = self.calculate_reward(new_position, dx, dy)
         
         # Handle traffic lights
         x, y = new_position
@@ -177,6 +142,61 @@ class Vehicle:
         
         self.total_reward += reward
         
+        # Get new state
+        new_congestion_level = self.urban_grid.get_congestion_window(self.position[0], self.position[1])
+        new_state = self.agent.get_state_key(self.position, new_congestion_level)
+        
+        # Update Q-table
+        self.agent.update_q_table(state, action_idx, reward, new_state)
+        
+        return reward
+    
+    def get_remaining_optimal_path(self):
+        """Get the remaining optimal path from current position"""
+        if not self.optimal_path:
+            return []
+        try:
+            current_index = self.optimal_path.index(self.position)
+            return self.optimal_path[current_index:]
+        except ValueError:
+            # If current position is not in optimal path, recalculate
+            self.update_optimal_path()
+            return self.optimal_path if self.optimal_path else []
+    
+    def calculate_reward(self, new_position, dx, dy):
+        """Calculate reward using the selected algorithm"""
+        # Calculate base reward using selected algorithm
+        algorithm_type = self.reward_config.get_algorithm_type()
+        
+        if algorithm_type == "exponential_distance":
+            reward = self.calculate_reward_exponential_distance(new_position, dx, dy)
+        else:  # proximity_based algorithm (default)
+            reward = self.calculate_reward_proximity_based(new_position, dx, dy)
+        
+        # Apply common penalties and modifiers (these apply to both algorithms)
+        reward += self.apply_common_penalties_and_modifiers(new_position, dx, dy)
+        
+        return reward
+    
+    def calculate_reward_proximity_based(self, new_position, dx, dy):
+        """Calculate reward using the proximity-based algorithm (original algorithm)"""
+        reward = self.reward_config.get_step_penalty()  # Step penalty
+        
+        # A* path following reward
+        astar_rewards = self.reward_config.get_astar_rewards()
+        if self.optimal_path and len(self.optimal_path) > 1:
+            next_optimal = self.optimal_path[1]  # Next position in optimal path
+            if new_position == next_optimal:
+                reward += astar_rewards['follow']  # Strong reward for following A* path
+            elif new_position in self.optimal_path:
+                reward += astar_rewards['on_path']  # Moderate reward for being on optimal path
+        
+        # Distance-based reward component
+        current_dist = manhattan_distance(self.position, self.destination)
+        new_dist = manhattan_distance(new_position, self.destination)
+        if new_dist < current_dist:
+            reward += self.reward_config.get_distance_reward()  # Reward for getting closer to destination
+        
         # --- Proximity reward: the closer to the destination, the higher the reward ---
         def manhattan_dist(a, b):
             return abs(a[0] - b[0]) + abs(a[1] - b[1])
@@ -213,23 +233,51 @@ class Vehicle:
             reward += path_reward
         # --- End A* path reward ---
         
-        # Get new state
-        new_congestion_level = self.urban_grid.get_congestion_window(self.position[0], self.position[1])
-        new_state = self.agent.get_state_key(self.position, new_congestion_level)
+        return reward
+    
+    def calculate_reward_exponential_distance(self, new_position, dx, dy):
+        """Calculate reward using the exponential distance algorithm
+        Formula: r = base_reward + multiplier × exp(-(|xi-xd|/x_scale + |yi-yd|/y_scale))
+        """
+        import math
         
-        # Update Q-table
-        self.agent.update_q_table(state, action_idx, reward, new_state)
+        exp_config = self.reward_config.get_exponential_distance_config()
+        
+        # Calculate distance components
+        x_dist = abs(new_position[0] - self.destination[0])
+        y_dist = abs(new_position[1] - self.destination[1])
+        
+        # Calculate normalized distance
+        normalized_dist = x_dist / exp_config['x_scale'] + y_dist / exp_config['y_scale']
+        
+        # Calculate exponential reward
+        exp_reward = exp_config['multiplier'] * math.exp(-normalized_dist)
+        reward = exp_config['base_reward'] + exp_reward
         
         return reward
     
-    def get_remaining_optimal_path(self):
-        """Get the remaining optimal path from current position"""
-        if not self.optimal_path:
-            return []
-        try:
-            current_index = self.optimal_path.index(self.position)
-            return self.optimal_path[current_index:]
-        except ValueError:
-            # If current position is not in optimal path, recalculate
-            self.update_optimal_path()
-            return self.optimal_path if self.optimal_path else []
+    def apply_common_penalties_and_modifiers(self, new_position, dx, dy):
+        """Apply common penalties and modifiers that work with both algorithms"""
+        total_modifier = 0
+        
+        # Congestion penalties
+        congestion_config = self.reward_config.get_congestion_config()
+        congestion_at_new_pos = self.urban_grid.congestion[new_position]
+        if congestion_at_new_pos > congestion_config['threshold']:  # High congestion threshold
+            total_modifier -= congestion_config['penalty_multiplier'] * congestion_at_new_pos
+        
+        # Enhanced backward movement prevention
+        backward_penalties = self.reward_config.get_backward_movement_penalties()
+        if len(self.path) > 1:
+            # Check for immediate backtracking
+            if new_position == self.path[-2]:
+                total_modifier += backward_penalties['immediate_backtrack']  # Penalty for immediate backtracking
+                
+            # Check for oscillating behavior (moving back and forth)
+            if len(self.path) > 3:
+                if new_position == self.path[-3]:  # Moving back to position from 2 steps ago
+                    total_modifier += backward_penalties['oscillation']  # Penalty for oscillation
+                if len(self.path) > 5 and new_position == self.path[-5]:  # Check longer oscillation patterns
+                    total_modifier += backward_penalties['long_oscillation']  # Penalty for longer oscillillation patterns
+        
+        return total_modifier

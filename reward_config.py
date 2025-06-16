@@ -9,8 +9,17 @@ class RewardConfig:
     """Configuration class for reward system parameters"""
     
     def __init__(self):
+        # Algorithm selection
+        self.algorithm = "proximity_based"  # Options: "proximity_based", "exponential_distance"
+        
         # Basic movement rewards
         self.step_penalty = -1  # Cost for each step taken
+        
+        # Exponential distance algorithm parameters
+        self.exp_base_reward = -1  # Base reward for exponential algorithm
+        self.exp_amplitude = 40  # Amplitude for exponential reward
+        self.exp_x_scale = 1.5  # X-direction scale factor
+        self.exp_y_scale = 2.0  # Y-direction scale factor
         
         # A* path following rewards
         self.astar_follow_reward = 10  # Strong reward for following A* path exactly
@@ -109,6 +118,27 @@ class RewardConfig:
             'penalty_multiplier': self.path_distance_penalty_multiplier
         }
     
+    def get_algorithm_type(self):
+        """Get the current algorithm type"""
+        return self.algorithm
+    
+    def set_algorithm_type(self, algorithm_type):
+        """Set the algorithm type"""
+        if algorithm_type in ["proximity_based", "exponential_distance"]:
+            self.algorithm = algorithm_type
+        else:
+            print(f"Warning: Unknown algorithm type '{algorithm_type}'. Using 'proximity_based'.")
+            self.algorithm = "proximity_based"
+    
+    def get_exponential_distance_config(self):
+        """Get exponential distance algorithm configuration"""
+        return {
+            'base_reward': self.exp_base_reward,
+            'multiplier': self.exp_amplitude,
+            'x_scale': self.exp_x_scale,
+            'y_scale': self.exp_y_scale
+        }
+    
     def update_config(self, **kwargs):
         """
         Update configuration values dynamically
@@ -154,7 +184,12 @@ class RewardConfig:
             'proximity_base_multiplier': self.proximity_base_multiplier,
             'proximity_max_multiplier': self.proximity_max_multiplier,
             'path_distance_base_reward': self.path_distance_base_reward,
-            'path_distance_penalty_multiplier': self.path_distance_penalty_multiplier
+            'path_distance_penalty_multiplier': self.path_distance_penalty_multiplier,
+            'algorithm': self.algorithm,
+            'exp_base_reward': self.exp_base_reward,
+            'exp_amplitude': self.exp_amplitude,
+            'exp_x_scale': self.exp_x_scale,
+            'exp_y_scale': self.exp_y_scale
         }
 
 

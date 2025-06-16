@@ -304,11 +304,17 @@ class SimulationController:
         
     def update_status(self, message):
         """Update the status text box"""
-        self.status_text.config(state="normal")
-        self.status_text.insert(tk.END, f"{message}\n")
-        self.status_text.see(tk.END)
-        self.status_text.config(state="disabled")
-        self.root.update()
+        # Check if status_text widget exists before using it
+        if hasattr(self, 'status_text') and self.status_text:
+            self.status_text.config(state="normal")
+            self.status_text.insert(tk.END, f"{message}\n")
+            self.status_text.see(tk.END)
+            self.status_text.config(state="disabled")
+            if hasattr(self, 'root') and self.root:
+                self.root.update()
+        else:
+            # If GUI is not ready, just print to console
+            print(f"Status: {message}")
     
     def update_delay(self, val):
         """Update step delay"""
@@ -681,20 +687,16 @@ class SimulationController:
             
         # Can only toggle obstacle mode when paused or not running
         if self.running and not self.paused:
-            self.update_status("Must pause before entering Obstacle Mode")
+            self.update_status("must stop to eneter place obstacle mode")
             return
-            
-        # If in congestion mode, exit it first
-        if self.congestion_mode:
-            self.toggle_congestion_mode()
             
         # Toggle obstacle mode
         self.obstacle_mode = not self.obstacle_mode
         
         # Update button text and appearance
         if self.obstacle_mode:
-            self.obstacle_mode_btn.config(text="Exit Obstacle Mode", style="Accent.TButton")
-            self.update_status("Obstacle Mode enabled: Click on map to add or remove obstacles")
+            self.obstacle_mode_btn.config(text="exit place obstacle mode", style="Accent.TButton")
+            self.update_status("entered place obstacle mode：click to add/remove obstacles")
             
             # Set up the canvas click handler in visualizer
             if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
@@ -703,8 +705,8 @@ class SimulationController:
                 # Update visualization to show it's in obstacle mode
                 self.urban_grid.visualizer.update_display(self.urban_grid, self.vehicles, obstacle_mode=True)
         else:
-            self.obstacle_mode_btn.config(text="Obstacle Mode", style="TButton")
-            self.update_status("Exited Obstacle Mode")
+            self.obstacle_mode_btn.config(text="place obstacle mode", style="TButton")
+            self.update_status("exit place obstacle mode")
             
             # Remove the canvas click handler
             if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
@@ -924,9 +926,25 @@ class SimulationController:
         notebook.add(advanced_tab, text="Advanced Settings")
         self.setup_advanced_rewards_tab(advanced_tab)
         
+        # Algorithm Selection Tab
+        algorithm_tab = ttk.Frame(notebook)
+        notebook.add(algorithm_tab, text="Algorithm Selection")
+        self.setup_algorithm_selection_tab(algorithm_tab)
+        
         # Control buttons
         btn_frame = ttk.Frame(reward_frame)
         btn_frame.pack(fill=tk.X, pady=5)
+        
+        # Algorithm selection
+        algorithm_frame = ttk.Frame(btn_frame)
+        algorithm_frame.pack(side=tk.LEFT, padx=5)
+        
+        ttk.Label(algorithm_frame, text="Algorithm:").pack(side=tk.LEFT, padx=2)
+        self.algorithm_var = tk.StringVar(value=self.reward_config.algorithm)
+        algorithm_combo = ttk.Combobox(algorithm_frame, textvariable=self.algorithm_var, 
+                                     values=["proximity_based", "exponential_distance"], 
+                                     state="readonly", width=18)
+        algorithm_combo.pack(side=tk.LEFT, padx=2)
         
         ttk.Button(btn_frame, text="Apply Reward Config", 
                   command=self.apply_reward_config).pack(side=tk.LEFT, padx=5)
@@ -1069,6 +1087,12 @@ class SimulationController:
         self.proximity_base_var = tk.StringVar(value=str(self.reward_config.proximity_base_multiplier))
         self.proximity_max_var = tk.StringVar(value=str(self.reward_config.proximity_max_multiplier))
         
+        # Exponential distance algorithm parameters
+        self.exp_base_reward_var = tk.StringVar(value=str(self.reward_config.exp_base_reward))
+        self.exp_amplitude_var = tk.StringVar(value=str(self.reward_config.exp_amplitude))
+        self.exp_x_scale_var = tk.StringVar(value=str(self.reward_config.exp_x_scale))
+        self.exp_y_scale_var = tk.StringVar(value=str(self.reward_config.exp_y_scale))
+        
         row = 0
         
         # Loop detection settings
@@ -1093,8 +1117,50 @@ class SimulationController:
         ttk.Label(scrollable_frame, text="Maximum proximity reward multiplier").grid(row=row, column=2, sticky="w", padx=5, pady=2)
         row += 1
         
+        # Separator for exponential distance algorithm
+        ttk.Separator(scrollable_frame, orient='horizontal').grid(row=row, column=0, columnspan=3, sticky="ew", pady=10)
+        row += 1
+        
+        # Exponential distance algorithm settings
+        ttk.Label(scrollable_frame, text="Exponential Distance Algorithm:", font=('Arial', 9, 'bold')).grid(row=row, column=0, columnspan=3, sticky="w", padx=5, pady=2)
+        row += 1
+        
+        ttk.Label(scrollable_frame, text="Base Reward:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.exp_base_reward_var, width=10).grid(row=row, column=1, padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="Base reward value (usually negative)").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        row += 1
+        
+        ttk.Label(scrollable_frame, text="Amplitude:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.exp_amplitude_var, width=10).grid(row=row, column=1, padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="Exponential reward amplitude").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        row += 1
+        
+        ttk.Label(scrollable_frame, text="X Scale Factor:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.exp_x_scale_var, width=10).grid(row=row, column=1, padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="X-direction distance scaling").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        row += 1
+        
+        ttk.Label(scrollable_frame, text="Y Scale Factor:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.exp_y_scale_var, width=10).grid(row=row, column=1, padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="Y-direction distance scaling").grid(row=row, column=2, sticky="w", padx=5, pady=2)
+        row += 1
+        
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
+    
+    def setup_algorithm_selection_tab(self, parent):
+        """Setup the algorithm selection tab"""
+        # Create radio buttons for algorithm selection
+        self.algorithm_var = tk.StringVar(value="Q-Learning")
+        
+        ttk.Label(parent, text="Select Algorithm:").pack(side=tk.TOP, anchor="w", padx=5, pady=5)
+        
+        algorithms = [("Q-Learning", "Q-Learning"), ("SARSA", "SARSA"), ("DQN", "DQN")]
+        for text, value in algorithms:
+            ttk.Radiobutton(
+                parent, text=text, variable=self.algorithm_var, value=value,
+                command=self.update_status(f"Algorithm set to {value}")
+            ).pack(side=tk.TOP, anchor="w", padx=5, pady=2)
     
     def apply_reward_config(self):
         """Apply the reward configuration from GUI inputs"""
@@ -1118,7 +1184,14 @@ class SimulationController:
                 loop_threshold_base=int(float(self.loop_threshold_base_var.get())),
                 loop_penalty_base=float(self.loop_penalty_base_var.get()),
                 proximity_base_multiplier=float(self.proximity_base_var.get()),
-                proximity_max_multiplier=float(self.proximity_max_var.get())
+                proximity_max_multiplier=float(self.proximity_max_var.get()),
+                
+                # Algorithm selection and exponential distance parameters
+                algorithm=self.algorithm_var.get(),
+                exp_base_reward=float(self.exp_base_reward_var.get()),
+                exp_amplitude=float(self.exp_amplitude_var.get()),
+                exp_x_scale=float(self.exp_x_scale_var.get()),
+                exp_y_scale=float(self.exp_y_scale_var.get())
             )
             
             self.update_status("Reward configuration updated")
@@ -1148,6 +1221,13 @@ class SimulationController:
         self.proximity_base_var.set(str(self.reward_config.proximity_base_multiplier))
         self.proximity_max_var.set(str(self.reward_config.proximity_max_multiplier))
         
+        # Reset algorithm and exponential distance parameters
+        self.algorithm_var.set(self.reward_config.algorithm)
+        self.exp_base_reward_var.set(str(self.reward_config.exp_base_reward))
+        self.exp_amplitude_var.set(str(self.reward_config.exp_amplitude))
+        self.exp_x_scale_var.set(str(self.reward_config.exp_x_scale))
+        self.exp_y_scale_var.set(str(self.reward_config.exp_y_scale))
+        
         self.update_status("Reward configuration reset to defaults")
     
     def load_reward_preset(self):
@@ -1166,7 +1246,8 @@ class SimulationController:
                 astar_follow_reward=20,
                 destination_reached_reward=300,
                 immediate_backtrack_penalty=-100,
-                congestion_penalty_multiplier=15
+                congestion_penalty_multiplier=15,
+                algorithm="proximity_based"  # Use proximity based for aggressive
             )
             self.update_reward_gui_from_config()
             self.update_status("Loaded aggressive configuration")
@@ -1178,10 +1259,26 @@ class SimulationController:
                 astar_follow_reward=5,
                 destination_reached_reward=50,
                 immediate_backtrack_penalty=-10,
-                congestion_penalty_multiplier=2
+                congestion_penalty_multiplier=2,
+                algorithm="proximity_based"  # Use proximity based for cautious
             )
             self.update_reward_gui_from_config()
             self.update_status("Loaded cautious configuration")
+            preset_window.destroy()
+        
+        def load_exponential():
+            self.reward_config.update_config(
+                algorithm="exponential_distance",
+                exp_base_reward=-1,
+                exp_amplitude=40,
+                exp_x_scale=1.5,
+                exp_y_scale=2.0,
+                step_penalty=0,  # Base reward handled by exponential function
+                astar_follow_reward=10,
+                destination_reached_reward=100
+            )
+            self.update_reward_gui_from_config()
+            self.update_status("Loaded exponential distance configuration")
             preset_window.destroy()
         
         def load_balanced():
@@ -1192,6 +1289,7 @@ class SimulationController:
         
         ttk.Button(preset_window, text="Aggressive (Fast & Direct)", command=load_aggressive).pack(pady=5)
         ttk.Button(preset_window, text="Cautious (Exploratory)", command=load_cautious).pack(pady=5)
+        ttk.Button(preset_window, text="Exponential Distance", command=load_exponential).pack(pady=5)
         ttk.Button(preset_window, text="Balanced (Default)", command=load_balanced).pack(pady=5)
         ttk.Button(preset_window, text="Cancel", command=preset_window.destroy).pack(pady=5)
     
@@ -1214,6 +1312,13 @@ class SimulationController:
             self.loop_penalty_base_var.set(str(self.reward_config.loop_penalty_base))
             self.proximity_base_var.set(str(self.reward_config.proximity_base_multiplier))
             self.proximity_max_var.set(str(self.reward_config.proximity_max_multiplier))
+            
+            # Update algorithm and exponential distance parameters
+            self.algorithm_var.set(self.reward_config.algorithm)
+            self.exp_base_reward_var.set(str(self.reward_config.exp_base_reward))
+            self.exp_amplitude_var.set(str(self.reward_config.exp_amplitude))
+            self.exp_x_scale_var.set(str(self.reward_config.exp_x_scale))
+            self.exp_y_scale_var.set(str(self.reward_config.exp_y_scale))
     
     def close_event(self):
         """Handle window close event"""
