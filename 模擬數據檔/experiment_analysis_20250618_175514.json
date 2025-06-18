@@ -1,0 +1,48 @@
+{
+  "total_experiments": 8,
+  "overall_success_rate": 0.7025,
+  "overall_avg_steps": 135.3181875,
+  "overall_avg_reward": -1565.6656351624058,
+  "overall_path_efficiency": 0.21947041404994277,
+  "overall_avg_computation_time": 51.89225782454014,
+  "by_algorithm": {
+    "proximity_based": {
+      "success_rate": 0.902225,
+      "avg_steps": 61.604975,
+      "avg_reward": 22.433391334419383,
+      "path_efficiency": 0.3382833888835674,
+      "avg_computation_time": 31.941143101453783
+    },
+    "exponential_distance": {
+      "success_rate": 0.502775,
+      "avg_steps": 209.0314,
+      "avg_reward": -3153.764661659231,
+      "path_efficiency": 0.10065743921631816,
+      "avg_computation_time": 71.8433725476265
+    }
+  },
+  "by_density": {
+    "0.1": {
+      "success_rate": 0.8020750000000001,
+      "avg_steps": 110.48769999999999,
+      "avg_reward": -1008.2058497791654
+    },
+    "0.25": {
+      "success_rate": 0.6029249999999999,
+      "avg_steps": 160.148675,
+      "avg_reward": -2123.1254205456466
+    }
+  },
+  "by_congestion": {
+    "high": {
+      "success_rate": 0.697075,
+      "avg_steps": 136.408325,
+      "avg_reward": -1586.7190832670217
+    },
+    "low": {
+      "success_rate": 0.707925,
+      "avg_steps": 134.22805,
+      "avg_reward": -1544.6121870577904
+    }
+  }
+}

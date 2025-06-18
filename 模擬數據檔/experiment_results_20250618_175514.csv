@@ -1,0 +1,9 @@
+algorithm_type,obstacle_density,congestion_level,success_rate,avg_steps,avg_reward,path_efficiency,avg_computation_time
+proximity_based,0.1,low,0.999900,30.3781,592.9020,0.395372,5.6413
+proximity_based,0.1,high,0.999800,30.9430,595.0533,0.388486,5.9038
+proximity_based,0.25,low,0.803000,93.5305,-549.3186,0.279868,57.6137
+proximity_based,0.25,high,0.806200,91.5683,-548.9031,0.289407,58.6057
+exponential_distance,0.1,low,0.619100,186.7465,-2550.5328,0.102505,46.0518
+exponential_distance,0.1,high,0.589500,193.8832,-2670.2459,0.100010,46.4633
+exponential_distance,0.25,low,0.409700,226.2571,-3671.4993,0.099994,95.5080
+exponential_distance,0.25,high,0.392800,229.2388,-3722.7806,0.100121,99.3504
