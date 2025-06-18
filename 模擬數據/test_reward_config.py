@@ -2,7 +2,7 @@
 簡單測試新的獎勵配置系統
 """
 
-from reward_config import RewardConfig
+from algorithm.reward_config import RewardConfig
 
 def test_reward_config():
     """測試獎勵配置系統的基本功能"""

@@ -13,7 +13,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from UI.simulation_controller import SimulationController
 from algorithm.agent import QLearningAgent
 from module.urban_grid import UrbanGrid
-from reward_config import RewardConfig
+from algorithm.reward_config import RewardConfig
 
 def main():
     """Main function - Test different reward algorithms"""

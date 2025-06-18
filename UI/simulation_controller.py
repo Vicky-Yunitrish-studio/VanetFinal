@@ -62,7 +62,7 @@ from tkinter import ttk, filedialog, messagebox
 from module.urban_grid import UrbanGrid
 from vehicle import Vehicle
 from algorithm.agent import QLearningAgent
-from reward_config import RewardConfig
+from algorithm.reward_config import RewardConfig
 import pickle
 import json
 

@@ -12,7 +12,7 @@ import numpy as np
 from module.urban_grid import UrbanGrid
 from algorithm.agent import QLearningAgent
 from vehicle import Vehicle
-from reward_config import RewardConfig
+from algorithm.reward_config import RewardConfig
 
 def run_algorithm_test(algorithm_name, algorithm_type, num_episodes=50, max_steps=200):
     """

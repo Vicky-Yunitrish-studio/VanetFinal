@@ -1,6 +1,6 @@
 import random
 from algorithm.astar import astar, manhattan_distance
-from reward_config import RewardConfig
+from algorithm.reward_config import RewardConfig
 
 class Vehicle:
     # Class variable to track vehicle IDs

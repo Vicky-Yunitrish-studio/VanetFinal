@@ -5,7 +5,7 @@ This file demonstrates how to use the new reward configuration system
 to customize vehicle behavior without modifying the core Vehicle class.
 """
 
-from reward_config import RewardConfig, default_reward_config
+from algorithm.reward_config import RewardConfig, default_reward_config
 from vehicle import Vehicle
 from module.urban_grid import UrbanGrid
 from algorithm.agent import Agent  # Assuming you have an Agent class

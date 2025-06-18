@@ -13,7 +13,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from algorithm.agent import QLearningAgent
 from module.urban_grid import UrbanGrid
 from vehicle import Vehicle
-from reward_config import RewardConfig
+from algorithm.reward_config import RewardConfig
 
 def demonstrate_parameter_sources():
     """演示各種參數的來源和使用方法"""
