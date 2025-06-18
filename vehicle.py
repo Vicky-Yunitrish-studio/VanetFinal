@@ -251,8 +251,8 @@ class Vehicle:
         normalized_dist = x_dist / exp_config['x_scale'] + y_dist / exp_config['y_scale']
         
         # Calculate exponential reward
-        exp_reward = exp_config['multiplier'] * math.exp(-normalized_dist)
-        reward = exp_config['base_reward'] + exp_reward
+        exp_reward = 40 * math.exp(-normalized_dist) # exp_config['multiplier'] * math.exp(-normalized_dist)
+        reward = -1 + exp_reward # exp_config['base_reward'] + exp_reward
         
         return reward
     
