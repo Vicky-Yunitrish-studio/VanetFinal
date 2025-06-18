@@ -1,0 +1,36 @@
+[
+  {
+    "algorithm": "proximity_based",
+    "obstacle_density": 0.1,
+    "congestion_level": "low",
+    "success_rate": 0.6537,
+    "avg_steps": 124.6196,
+    "std_steps": 130.72624256758854,
+    "avg_reward": 2953.5139729490675,
+    "std_reward": 3610.7791833895344,
+    "avg_computation_time": 0.00729023232460022,
+    "std_computation_time": 0.010660819461347198,
+    "avg_path_efficiency": 0.37470221354645944,
+    "std_path_efficiency": 0.30751716659791395,
+    "avg_collisions": 98.9378,
+    "std_collisions": 132.04981836852332,
+    "num_episodes": 10000
+  },
+  {
+    "algorithm": "proximity_based",
+    "obstacle_density": 0.1,
+    "congestion_level": "high",
+    "success_rate": 0.9231,
+    "avg_steps": 56.1024,
+    "std_steps": 78.97830533912462,
+    "avg_reward": 707.4148270201061,
+    "std_reward": 991.7421964287947,
+    "avg_computation_time": 0.004822129607200623,
+    "std_computation_time": 0.013205023660800588,
+    "avg_path_efficiency": 0.48921521281296965,
+    "std_path_efficiency": 0.26219687525539026,
+    "avg_collisions": 20.0782,
+    "std_collisions": 54.17007923900425,
+    "num_episodes": 10000
+  }
+]
