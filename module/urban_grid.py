@@ -84,7 +84,7 @@ class UrbanGrid:
             return
             
         # Create or update tkinter visualizer
-        if not hasattr(self, 'visualizer') or self.visualizer.is_closed:
+        if not hasattr(self, 'visualizer') or self.visualizer is None or self.visualizer.is_closed:
             self.visualizer = TkinterVisualizer(grid_size=self.size, cell_size=30)
             
         # Store vehicles reference for visualization

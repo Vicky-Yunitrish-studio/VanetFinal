@@ -597,7 +597,7 @@ class SimulationController:
         self.update_status("Cleared all area congestion")
         
         # Update visualization
-        if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
+        if hasattr(self.urban_grid, 'visualizer') and self.urban_grid.visualizer is not None and not self.urban_grid.visualizer.is_closed:
             self.urban_grid.visualize(self.vehicles, show_plot=True)
 
     def toggle_congestion_mode(self):
@@ -624,7 +624,7 @@ class SimulationController:
             self.update_status("Congestion Mode enabled: Click on map to adjust regional congestion level")
             
             # Set up the canvas click handler in visualizer
-            if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
+            if hasattr(self.urban_grid, 'visualizer') and self.urban_grid.visualizer is not None and not self.urban_grid.visualizer.is_closed:
                 self.urban_grid.visualizer.canvas.bind("<Button-1>", self.on_congestion_click)
                 
                 # Update visualization to show it's in congestion mode
@@ -634,7 +634,7 @@ class SimulationController:
             self.update_status("Exited Congestion Mode")
             
             # Remove the canvas click handler
-            if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
+            if hasattr(self.urban_grid, 'visualizer') and self.urban_grid.visualizer is not None and not self.urban_grid.visualizer.is_closed:
                 self.urban_grid.visualizer.canvas.unbind("<Button-1>")
                 
                 # Update visualization to normal mode
@@ -699,7 +699,7 @@ class SimulationController:
             self.update_status("entered place obstacle mode：click to add/remove obstacles")
             
             # Set up the canvas click handler in visualizer
-            if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
+            if hasattr(self.urban_grid, 'visualizer') and self.urban_grid.visualizer is not None and not self.urban_grid.visualizer.is_closed:
                 self.urban_grid.visualizer.canvas.bind("<Button-1>", self.on_canvas_click)
                 
                 # Update visualization to show it's in obstacle mode
@@ -709,7 +709,7 @@ class SimulationController:
             self.update_status("exit place obstacle mode")
             
             # Remove the canvas click handler
-            if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
+            if hasattr(self.urban_grid, 'visualizer') and self.urban_grid.visualizer is not None and not self.urban_grid.visualizer.is_closed:
                 self.urban_grid.visualizer.canvas.unbind("<Button-1>")
                 
                 # Update visualization to normal mode
@@ -765,7 +765,7 @@ class SimulationController:
             self.update_status("entered place obstacle mode：click to add/remove obstacles")
             
             # Set up the canvas click handler in visualizer
-            if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
+            if hasattr(self.urban_grid, 'visualizer') and self.urban_grid.visualizer is not None and not self.urban_grid.visualizer.is_closed:
                 self.urban_grid.visualizer.canvas.bind("<Button-1>", self.on_canvas_click)
                 
                 # Update visualization to show it's in obstacle mode
@@ -775,7 +775,7 @@ class SimulationController:
             self.update_status("exit place obstacle mode")
             
             # Remove the canvas click handler
-            if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
+            if hasattr(self.urban_grid, 'visualizer') and self.urban_grid.visualizer is not None and not self.urban_grid.visualizer.is_closed:
                 self.urban_grid.visualizer.canvas.unbind("<Button-1>")
                 
                 # Update visualization to normal mode
@@ -836,7 +836,7 @@ class SimulationController:
         self.update_status(f"Added {num_obstacles} random obstacles and a middle incident")
         
         # If visualization is active, update it
-        if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
+        if hasattr(self.urban_grid, 'visualizer') and self.urban_grid.visualizer is not None and not self.urban_grid.visualizer.is_closed:
             self.urban_grid.visualize(self.vehicles, show_plot=True)
     
     def perform_simulation_step(self):
@@ -892,7 +892,7 @@ class SimulationController:
     
     def on_close(self):
         """Handle window closing"""
-        if hasattr(self.urban_grid, 'visualizer') and not self.urban_grid.visualizer.is_closed:
+        if hasattr(self.urban_grid, 'visualizer') and self.urban_grid.visualizer is not None and not self.urban_grid.visualizer.is_closed:
             self.urban_grid.visualizer.close()
         
         self.root.destroy()
