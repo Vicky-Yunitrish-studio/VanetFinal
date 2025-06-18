@@ -52,10 +52,10 @@ $R_{proximity} = d(s_t, g) - d(s_{t+1}, g)$
 
 其中：
 
-- $s_t$ = 當前位置 (current position)
-- $s_{t+1}$ = 下一個位置 (next position)  
-- $g$ = 目標位置 (goal position)
-- $d(\#,\#)$ = 曼哈頓距離函數
+- $s_t = 當前位置 (current position)$
+- $s_{t+1} = 下一個位置 (next position)$  
+- $g = 目標位置 (goal position)$
+- $d(x,y) = 曼哈頓距離函數$
 
 ##### 📊 動態倍數獎勵函數
 
