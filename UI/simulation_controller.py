@@ -59,9 +59,9 @@ import tkinter as tk
 import numpy as np
 import time
 from tkinter import ttk, filedialog, messagebox
-from urban_grid import UrbanGrid
+from module.urban_grid import UrbanGrid
 from vehicle import Vehicle
-from agent import QLearningAgent
+from algorithm.agent import QLearningAgent
 from reward_config import RewardConfig
 import pickle
 import json
@@ -155,12 +155,12 @@ class SimulationController:
         
         # Unlimited steps checkbox
         self.unlimited_steps_var = tk.BooleanVar(value=False)
-        unlimited_check = ttk.Checkbutton(
-            step_frame, text="Unlimited Steps (until all vehicles reach destination)", 
-            variable=self.unlimited_steps_var,
-            command=self.toggle_unlimited_steps
-        )
-        unlimited_check.grid(row=2, column=0, columnspan=3, sticky="w", padx=5)
+        # unlimited_check = ttk.Checkbutton(
+        #     step_frame, text="Unlimited Steps (until all vehicles reach destination)", 
+        #     variable=self.unlimited_steps_var,
+        #     command=self.toggle_unlimited_steps
+        # )
+        # unlimited_check.grid(row=2, column=0, columnspan=3, sticky="w", padx=5)
         
         step_frame.columnconfigure(1, weight=1)
         
@@ -355,7 +355,7 @@ class SimulationController:
                 
                 # Make sure urban_grid is properly initialized
                 if not hasattr(self.agent, 'urban_grid') or self.agent.urban_grid is None:
-                    from urban_grid import UrbanGrid
+                    from module.urban_grid import UrbanGrid
                     self.agent.urban_grid = UrbanGrid(
                         size=self.agent.grid_size,
                         congestion_update_rate=self.agent.grid_congestion_update_rate,

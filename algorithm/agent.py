@@ -125,7 +125,7 @@ class QLearningAgent:
         
         # Recreate urban_grid if needed
         if not hasattr(self, 'urban_grid') or self.urban_grid is None:
-            from urban_grid import UrbanGrid
+            from module.urban_grid import UrbanGrid
             self.urban_grid = UrbanGrid(
                 size=self.grid_size, 
                 congestion_update_rate=self.grid_congestion_update_rate,

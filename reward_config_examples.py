@@ -7,8 +7,8 @@ to customize vehicle behavior without modifying the core Vehicle class.
 
 from reward_config import RewardConfig, default_reward_config
 from vehicle import Vehicle
-from urban_grid import UrbanGrid
-from agent import Agent  # Assuming you have an Agent class
+from module.urban_grid import UrbanGrid
+from algorithm.agent import Agent  # Assuming you have an Agent class
 
 def example_basic_usage():
     """Basic example of using default reward configuration"""

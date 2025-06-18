@@ -5,7 +5,7 @@ This file serves as the entry point for the simulation.
 import argparse
 import pickle
 from simulation import run_simulation, test_incident_response
-from simulation_controller import SimulationController
+from UI.simulation_controller import SimulationController
 
 def train_mode(episodes=200, visualize_interval=50, show_plots=True, max_steps=2000, 
               save_agent=True, iterations=1, save_iterations=False, unlimited_steps=False):
@@ -131,7 +131,7 @@ if __name__ == "__main__":
                     
                 # Make sure urban_grid is properly initialized
                 if not hasattr(trained_agent, 'urban_grid') or trained_agent.urban_grid is None:
-                    from urban_grid import UrbanGrid
+                    from module.urban_grid import UrbanGrid
                     trained_agent.urban_grid = UrbanGrid(
                         size=trained_agent.grid_size,
                         congestion_update_rate=trained_agent.grid_congestion_update_rate,
@@ -166,7 +166,7 @@ if __name__ == "__main__":
                     
                 # Make sure urban_grid is properly initialized
                 if not hasattr(trained_agent, 'urban_grid') or trained_agent.urban_grid is None:
-                    from urban_grid import UrbanGrid
+                    from module.urban_grid import UrbanGrid
                     trained_agent.urban_grid = UrbanGrid(
                         size=trained_agent.grid_size,
                         congestion_update_rate=trained_agent.grid_congestion_update_rate,

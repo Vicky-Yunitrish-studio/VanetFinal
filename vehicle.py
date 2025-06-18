@@ -1,5 +1,5 @@
 import random
-from astar import astar, manhattan_distance
+from algorithm.astar import astar, manhattan_distance
 from reward_config import RewardConfig
 
 class Vehicle:

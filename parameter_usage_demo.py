@@ -10,8 +10,8 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from agent import QLearningAgent
-from urban_grid import UrbanGrid
+from algorithm.agent import QLearningAgent
+from module.urban_grid import UrbanGrid
 from vehicle import Vehicle
 from reward_config import RewardConfig
 
@@ -119,7 +119,7 @@ def demonstrate_parameter_sources():
             print(f"   A*路徑上獎勵: +{reward_config.astar_on_path_reward}")
     
     # 檢查距離改善
-    from astar import manhattan_distance
+    from algorithm.astar import manhattan_distance
     current_dist = manhattan_distance(vehicle.position, vehicle.destination)
     new_dist = manhattan_distance(new_position, vehicle.destination)
     if new_dist < current_dist:

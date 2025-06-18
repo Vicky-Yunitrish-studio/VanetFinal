@@ -5,7 +5,7 @@ Comprehensive test for all Q-Learning Urban Traffic Simulation improvements
 
 import pickle
 import tkinter as tk
-from simulation_controller import SimulationController
+from UI.simulation_controller import SimulationController
 
 def comprehensive_test():
     """Test all implemented features"""
@@ -21,7 +21,7 @@ def comprehensive_test():
     except FileNotFoundError:
         print("ℹ No trained agent found. Creating new one...")
         # Create a basic agent for testing
-        from agent import QLearningAgent
+        from algorithm.agent import QLearningAgent
         trained_agent = QLearningAgent(
             grid_size=20,
             learning_rate=0.1,

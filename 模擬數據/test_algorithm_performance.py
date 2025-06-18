@@ -9,8 +9,8 @@ This script runs automated tests to compare the Proximity-Based and Exponential 
 import sys
 import time
 import numpy as np
-from urban_grid import UrbanGrid
-from agent import QLearningAgent
+from module.urban_grid import UrbanGrid
+from algorithm.agent import QLearningAgent
 from vehicle import Vehicle
 from reward_config import RewardConfig
 

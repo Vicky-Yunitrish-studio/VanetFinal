@@ -3,7 +3,7 @@
 Simple test script to verify UI functionality
 """
 import tkinter as tk
-from simulation_controller import SimulationController
+from UI.simulation_controller import SimulationController
 
 def test_ui():
     """Test the UI with all features"""

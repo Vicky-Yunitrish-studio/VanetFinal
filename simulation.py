@@ -1,8 +1,8 @@
 import numpy as np
 import random
 import matplotlib.pyplot as plt
-from urban_grid import UrbanGrid
-from agent import QLearningAgent
+from module.urban_grid import UrbanGrid
+from algorithm.agent import QLearningAgent
 from vehicle import Vehicle
 
 def run_simulation(episodes=1000, visualize_interval=100, max_steps=200, show_plots=True, agent=None, reward_config=None):

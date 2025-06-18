@@ -5,7 +5,7 @@ Quick test script for path visualization improvements
 
 import pickle
 import tkinter as tk
-from simulation_controller import SimulationController
+from UI.simulation_controller import SimulationController
 
 def test_path_visualization():
     """Test the path visualization with existing trained agent"""

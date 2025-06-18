@@ -6,9 +6,9 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from simulation_controller import SimulationController
-from agent import QLearningAgent
-from urban_grid import UrbanGrid
+from UI.simulation_controller import SimulationController
+from algorithm.agent import QLearningAgent
+from module.urban_grid import UrbanGrid
 
 def test_reward_config_gui():
     """測試獎勵配置GUI"""
