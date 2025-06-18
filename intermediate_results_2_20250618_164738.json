@@ -1,0 +1,32 @@
+[
+  {
+    "algorithm_type": "proximity_based",
+    "obstacle_density": 0.1,
+    "congestion_level": "low",
+    "num_episodes": 10000,
+    "success_rate": 0.9999,
+    "avg_steps": 30.3781,
+    "avg_reward": 592.9020039927307,
+    "path_efficiency": 0.39537236268497866,
+    "avg_computation_time": 5.641264748573303,
+    "experiment_time": 59.09207630157471,
+    "successful_episodes": 9999,
+    "total_steps": 303781,
+    "total_rewards": 5929020.039927307
+  },
+  {
+    "algorithm_type": "proximity_based",
+    "obstacle_density": 0.1,
+    "congestion_level": "high",
+    "num_episodes": 10000,
+    "success_rate": 0.9998,
+    "avg_steps": 30.943,
+    "avg_reward": 595.0532872513891,
+    "path_efficiency": 0.388485574587961,
+    "avg_computation_time": 5.903849315643311,
+    "experiment_time": 61.715824127197266,
+    "successful_episodes": 9998,
+    "total_steps": 309430,
+    "total_rewards": 5950532.872513891
+  }
+]

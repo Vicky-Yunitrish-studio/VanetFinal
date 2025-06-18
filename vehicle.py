@@ -88,13 +88,23 @@ class Vehicle:
         dx, dy = self.agent.actions[action_idx]
         new_position = (self.position[0] + dx, self.position[1] + dy)
         
-        # Calculate reward using the selected algorithm
-        reward = self.calculate_reward(new_position, dx, dy)
+        # Check boundaries - prevent moving outside the grid
+        x, y = new_position
+        if x < 0 or x >= self.urban_grid.size or y < 0 or y >= self.urban_grid.size:
+            # Stay in current position if move would go out of bounds
+            new_position = self.position
+            x, y = new_position
+            # Apply penalty for trying to move out of bounds
+            reward = -10
+        else:
+            # Calculate reward using the selected algorithm
+            reward = self.calculate_reward(new_position, dx, dy)
         
-        # Handle traffic lights
+        # Handle traffic lights (only if within bounds)
         x, y = new_position
         can_move = True
-        if self.urban_grid.traffic_lights[x, y] > 0:
+        if (0 <= x < self.urban_grid.size and 0 <= y < self.urban_grid.size and 
+            self.urban_grid.traffic_lights[x, y] > 0):
             # Check if moving against red light
             # If moving North-South (dy != 0) and EW is green (state = 2)
             # Or if moving East-West (dx != 0) and NS is green (state = 1)
@@ -259,6 +269,12 @@ class Vehicle:
     def apply_common_penalties_and_modifiers(self, new_position, dx, dy):
         """Apply common penalties and modifiers that work with both algorithms"""
         total_modifier = 0
+        
+        # Check if new_position is within bounds
+        x, y = new_position
+        if x < 0 or x >= self.urban_grid.size or y < 0 or y >= self.urban_grid.size:
+            # If out of bounds, apply heavy penalty and return
+            return -50
         
         # Congestion penalties
         congestion_config = self.reward_config.get_congestion_config()
